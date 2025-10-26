@@ -38,7 +38,7 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
               radius: 20,
               backgroundColor: AppColors.primary,
               child: Icon(Icons.person, color: AppColors.textLight),
-              // TODO: Añadir la imagen del usuario
+              // "TODO": Añadir la imagen del usuario
               // backgroundImage: NetworkImage('url_de_la_foto'),
             ),
             SizedBox(width: 12),

@@ -48,7 +48,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. ESTE SCAFFOLD CONTROLA TODO
+    // 1. ESTE SCAFFOLD CONTROLA EL "to do"
     return Scaffold(
       // 2. ¡AQUÍ ESTÁ LA BARRA SUPERIOR (APPBAR) QUE FALTABA!
       appBar: AppBar(
