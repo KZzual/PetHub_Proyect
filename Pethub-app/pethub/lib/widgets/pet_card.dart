@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-// 1. ASEGÚRATE de que esta importación sea correcta.
-//    Asume que 'info_chip.dart' está en la MISMA carpeta 'widgets'.
 import 'info_chip.dart';
+import '../utils/app_colors.dart'; // Importamos los colores
 
 class PetCard extends StatelessWidget {
   const PetCard({super.key});
@@ -9,31 +8,32 @@ class PetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      elevation: 2.0,
+      margin: EdgeInsets.zero, // Quitamos el margen para que se ajuste al padre
+      elevation: 0.0, // Quitamos la elevación (sombra)
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+      color: AppColors.background, // Usamos el color de fondo
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header de la Card
+          // Header de la tarjeta (Usuario)
           ListTile(
             leading: const CircleAvatar(
               backgroundImage: NetworkImage('https://placehold.co/150x150/EAA0A2/white?text=User'),
             ),
-            title: const Text('Juan Pérez', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text('Juan Pérez', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
             subtitle: const Text('Hace 1 semanas'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.location_on, size: 16.0, color: Colors.blue),
-                SizedBox(width: 4),
-                Text('5 km', style: TextStyle(color: Colors.blue)),
+              children: [
+                const Icon(Icons.location_on, size: 16.0, color: AppColors.secondary),
+                const SizedBox(width: 4),
+                Text('5 km', style: TextStyle(color: AppColors.secondary)),
               ],
             ),
           ),
           
-          // Imagen (seguirá fallando hasta que añadas los assets)
+          // Imagen principal de la mascota
           Image.asset(
             'assets/dog_image.jpg',
             height: 250,
@@ -43,15 +43,14 @@ class PetCard extends StatelessWidget {
               return Container(
                 height: 250,
                 width: double.infinity,
-                color: Colors.grey[300],
-                child: const Center(
-                  child: Text('Error al cargar imagen'),
-                ),
+                color: AppColors.accent,
+                alignment: Alignment.center,
+                child: const Text('Error al cargar imagen', style: TextStyle(color: AppColors.textDark)),
               );
             },
           ),
           
-          // Cuerpo de la Card
+          // Cuerpo de la tarjeta (info y tags)
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -59,12 +58,11 @@ class PetCard extends StatelessWidget {
               children: [
                 const Text(
                   'Max',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark),
                 ),
                 const SizedBox(height: 16),
                 
-                // 2. ESTA ES LA SECCIÓN PROBLEMÁTICA
-                //    Asegúrate de que esté usando 'InfoChip'
+                // Grilla de información (Perro, Labrador, etc.)
                 Row(
                   children: [
                     Expanded(
@@ -92,7 +90,7 @@ class PetCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 
-                // Tags
+                // Tags (Vacunado, Adiestrado)
                 Wrap(
                   spacing: 8.0,
                   runSpacing: 4.0,
@@ -109,12 +107,16 @@ class PetCard extends StatelessWidget {
     );
   }
 
+  // Widget de ayuda para los tags ("pills")
   Widget _buildTag(String text, Color color) {
     return Chip(
       label: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-      backgroundColor: color.withOpacity(0.15),
+      // ¡AQUÍ ESTÁ LA CORRECCIÓN!
+      // Usamos .withAlpha(38) que equivale a ~15% de opacidad
+      backgroundColor: color.withAlpha(38),
       side: BorderSide.none,
       avatar: Icon(Icons.check_circle, color: color, size: 18),
     );
   }
 }
+
