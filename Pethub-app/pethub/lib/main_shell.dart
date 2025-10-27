@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'screens/home_page.dart';
 import 'screens/create_post_page.dart';
 import 'screens/post_history_page.dart';
-import 'screens/profile_page.dart'; // Importamos la página de perfil
+import 'screens/profile_page.dart';
+import 'screens/messages_page.dart';
+// 1. IMPORTAMOS LA ÚLTIMA PÁGINA: NOTIFICACIONES
+import 'screens/notifications_page.dart'; 
 import 'utils/app_colors.dart';
 
 class MainShell extends StatefulWidget {
@@ -20,17 +23,18 @@ class _MainShellState extends State<MainShell> {
     'PetHub - Inicio',
     'Historial de Posts',
     'Publicar', // No se usa, ya que 'Publicar' es un modal
-    'Notificaciones',
+    'Notificaciones', // Título actualizado
     'Mensajes'
   ];
 
   // Páginas que se mostrarán en el cuerpo
-  static const List<Widget> _stackPages = <Widget>[
-    HomePage(), 
-    PostHistoryPage(),
-    SizedBox.shrink(), // Placeholder para el índice 2 (Publicar)
-    PlaceholderPage(title: 'Notificaciones'), 
-    PlaceholderPage(title: 'Mensajes'), 
+  static final List<Widget> _stackPages = <Widget>[
+    const HomePage(), 
+    const PostHistoryPage(),
+    const SizedBox.shrink(), // Placeholder para el índice 2 (Publicar)
+    // 2. ¡CONECTAMOS LA PÁGINA DE NOTIFICACIONES!
+    const NotificationsPage(), // Reemplazamos el Placeholder
+    const MessagesPage(), 
   ];
 
   void _onItemTapped(int index) {
@@ -48,9 +52,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. ESTE SCAFFOLD CONTROLA EL "to do"
     return Scaffold(
-      // 2. ¡AQUÍ ESTÁ LA BARRA SUPERIOR (APPBAR) QUE FALTABA!
       appBar: AppBar(
         leading: const Icon(Icons.pets, color: AppColors.textLight),
         title: Text(
@@ -59,7 +61,6 @@ class _MainShellState extends State<MainShell> {
         ),
         elevation: 0,
         actions: [
-          // Botón de Perfil que funciona en todas las pestañas
           IconButton(
             icon: const Icon(Icons.person_outline, color: AppColors.textLight),
             onPressed: () {
@@ -71,12 +72,10 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-      // El cuerpo cambia según la pestaña seleccionada
       body: IndexedStack(
         index: _selectedIndex,
         children: _stackPages,
       ),
-      // La barra de navegación inferior
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: AppColors.background,
@@ -94,24 +93,6 @@ class _MainShellState extends State<MainShell> {
           BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notificaciones'),
           BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Mensajes'),
         ],
-      ),
-    );
-  }
-}
-
-// --- Widget Provisional (Simplificado) ---
-// Este SÍ es correcto, SIN Scaffold y SIN AppBar,
-// porque el MainShell ya los provee.
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-  const PlaceholderPage({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Página de $title',
-        style: Theme.of(context).textTheme.headlineMedium,
       ),
     );
   }

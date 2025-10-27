@@ -1,9 +1,15 @@
+// 1. IMPORTS CORREGIDOS
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
-import '../widgets/pet_card.dart'; 
+import '../widgets/pet_card.dart';
+import 'edit_profile_page.dart';
+import 'settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  // Parámetro opcional de userId
+  final String? userId; 
+
+  const ProfilePage({super.key, this.userId});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -11,11 +17,23 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin {
   late TabController _tabController;
+  bool _isMyProfile = false;
+  String _userName = "Cargando...";
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    
+    // Comprobamos qué perfil mostrar
+    _isMyProfile = (widget.userId == null);
+
+    // Cargamos los datos (Simulación)
+    if (_isMyProfile) {
+      _userName = "María González"; // Mis datos
+    } else {
+      _userName = "Perfil de Otro Usuario"; // Datos de otro
+    }
   }
 
   @override
@@ -27,40 +45,52 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: AppColors.accent,
       appBar: AppBar(
         leading: const BackButton(color: AppColors.textDark),
         backgroundColor: AppColors.background,
         elevation: 1,
-        title: const Row(
+        title: Row(
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primary,
               child: Icon(Icons.person, color: AppColors.textLight),
-              // "TODO": Añadir la imagen del usuario
-              // backgroundImage: NetworkImage('url_de_la_foto'),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(
-              'María González',
-              style: TextStyle(
+              _userName,
+              style: const TextStyle(
                 color: AppColors.textDark, 
                 fontWeight: FontWeight.bold
               ),
             ),
           ],
         ),
+        // Lógica de botones del AppBar
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppColors.textDark),
-            onPressed: () { /* Lógica para el menú '...' */ },
-          ),
+          if (_isMyProfile)
+            // Si es MI perfil, muestro el menú de 3 puntos
+            IconButton(
+              icon: const Icon(Icons.more_horiz, color: AppColors.textDark),
+              onPressed: () {
+                // Llamamos al menú inferior
+                _showSettingsMenu(context);
+              },
+            )
+          else
+            // Si es el perfil de OTRO, muestro el botón de Reportar
+            IconButton(
+              icon: const Icon(Icons.flag_outlined, color: AppColors.textDark),
+              onPressed: () {
+                // Lógica para reportar usuario
+              },
+            ),
         ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primary,
-          unselectedLabelColor: const Color.fromARGB(255, 202, 201, 201),
+          unselectedLabelColor: Colors.grey,
           indicatorColor: AppColors.primary,
           isScrollable: true,
           tabs: const [
@@ -83,8 +113,48 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
     );
   }
 
-  // --- Widgets de Pestañas ---
+  // Función para mostrar el menú (Bottom Sheet)
+  void _showSettingsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.edit_outlined, color: AppColors.textDark),
+              title: const Text('Editar Perfil', style: TextStyle(color: AppColors.textDark)),
+              onTap: () {
+                Navigator.pop(context); // Cierra el menú
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined, color: AppColors.textDark),
+              title: const Text('Configuración', style: TextStyle(color: AppColors.textDark)),
+              onTap: () {
+                Navigator.pop(context); // Cierra el menú
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
+            ),
+            const SizedBox(height: 20), // Espacio inferior
+          ],
+        );
+      },
+    );
+  }
 
+  
+  // --- Widgets de Pestañas ---
   Widget _buildTodoTab() {
     return ListView(
       padding: const EdgeInsets.all(16.0),
@@ -115,6 +185,12 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   }
 
   Widget _buildActivityTab() {
+    if (!_isMyProfile) {
+      return const Center(
+        child: Text('La actividad de este usuario es privada.'),
+      );
+    }
+    
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
@@ -218,8 +294,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   Widget _buildActivityRow(IconData icon, Color iconColor, String title, String subtitle) {
     return ListTile(
       leading: CircleAvatar(
-        // 1. ¡AQUÍ ESTÁ LA CORRECCIÓN!
-        backgroundColor: iconColor.withAlpha(26), // 26 es ~10% de opacidad
+        // CORRECCIÓN de 'withOpacity' a 'withAlpha'
+        backgroundColor: iconColor.withAlpha(26),
         child: Icon(icon, color: iconColor),
       ),
       title: Text(title, style: const TextStyle(color: AppColors.textDark)),
