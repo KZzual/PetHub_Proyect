@@ -6,6 +6,8 @@ import '../auth_service.dart';
 import 'verify_email_page.dart';
 import 'success_account_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/user_service.dart';
+
 
 
 class LoginPage extends StatefulWidget {
@@ -406,6 +408,13 @@ class _LoginPageState extends State<LoginPage> {
               displayName: name,
             );
 
+            // 🔹 Guardar datos en Firestore
+            await UserService.createUserProfile(
+              name: name,
+              email: email,
+              phone: phone,
+            );
+            
             // 🔹 Muestra la pantalla de verificación
             if (!mounted) return;
             final verified = await Navigator.push(
