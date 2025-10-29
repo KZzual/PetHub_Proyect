@@ -3,6 +3,7 @@ import 'screens/login_page.dart'; // Importa la página de login
 import 'utils/app_colors.dart'; // Importa la paleta de colores
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // <-- esta línea es clave

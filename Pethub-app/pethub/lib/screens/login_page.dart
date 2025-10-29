@@ -5,6 +5,7 @@ import '../utils/app_colors.dart';
 // Auth
 import '../auth_service.dart';
 import 'verify_email_page.dart';
+import 'success_account_page.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -12,14 +13,36 @@ class LoginPage extends StatefulWidget {
 
   @override
   State<LoginPage> createState() => _LoginPageState();
+  
 }
 
 class _LoginPageState extends State<LoginPage> {
   // true = muestra Login, false = muestra Registrarse
   bool _isLoginView = true;
+  //LOGIN
   bool _loadingLogin = false;
   final TextEditingController _loginEmailCtrl = TextEditingController();
   final TextEditingController _loginPassCtrl  = TextEditingController();
+  //REGISTRO
+  final TextEditingController _regNameCtrl    = TextEditingController();
+  final TextEditingController _regPhoneCtrl   = TextEditingController();
+  final TextEditingController _regEmailCtrl   = TextEditingController();
+  final TextEditingController _regPassCtrl    = TextEditingController();
+  final TextEditingController _regPass2Ctrl   = TextEditingController();
+  bool _loadingRegister = false;
+
+   @override
+  void dispose() {
+    _loginEmailCtrl.dispose();
+    _loginPassCtrl.dispose();
+    _regNameCtrl.dispose();
+    _regPhoneCtrl.dispose();
+    _regEmailCtrl.dispose();
+    _regPassCtrl.dispose();
+    _regPass2Ctrl.dispose();
+    super.dispose();
+  }
+
 
   // Controladores para la visibilidad de la contraseña
   bool _isPasswordObscure = true;
@@ -288,17 +311,18 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(color: Colors.grey),
         ),
         const SizedBox(height: 24),
-        _buildTextField(hint: 'Nombre Completo', icon: Icons.person_outline),
+          _buildTextField(hint: 'Nombre Completo', icon: Icons.person_outline, controller: _regNameCtrl),
         const SizedBox(height: 16),
-        _buildTextField(hint: 'Número de teléfono móvil', icon: Icons.phone_outlined),
+          _buildTextField(hint: 'Número de teléfono móvil', icon: Icons.phone_outlined, controller: _regPhoneCtrl),
         const SizedBox(height: 16),
-        _buildTextField(hint: 'Correo Electrónico', icon: Icons.email_outlined),
+          _buildTextField(hint: 'Correo Electrónico', icon: Icons.email_outlined, controller: _regEmailCtrl),
         const SizedBox(height: 16),
-        _buildTextField(
+          _buildTextField(
           hint: 'Contraseña',
           icon: Icons.lock_outline,
           isPassword: true,
           isObscure: _isPasswordObscure,
+          controller: _regPassCtrl,
           onToggleVisibility: () {
             setState(() {
               _isPasswordObscure = !_isPasswordObscure;
@@ -311,6 +335,7 @@ class _LoginPageState extends State<LoginPage> {
           icon: Icons.lock_outline,
           isPassword: true,
           isObscure: _isConfirmPasswordObscure,
+          controller: _regPass2Ctrl,
           onToggleVisibility: () {
             setState(() {
               _isConfirmPasswordObscure = !_isConfirmPasswordObscure;
@@ -327,9 +352,67 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(12.0),
             ),
           ),
-          onPressed: () {
-            // Lógica de registro
-          },
+         onPressed: _loadingRegister ? null : () async {
+          final name  = _regNameCtrl.text.trim();
+          final phone = _regPhoneCtrl.text.trim();
+          final email = _regEmailCtrl.text.trim();
+          final pass1 = _regPassCtrl.text.trim();
+          final pass2 = _regPass2Ctrl.text.trim();
+
+          if (name.isEmpty || phone.isEmpty || email.isEmpty || pass1.isEmpty || pass2.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Completa todos los campos')),
+            );
+            return;
+          }
+
+          if (pass1.length < 6) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres')),
+            );
+            return;
+          }
+
+          if (pass1 != pass2) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Las contraseñas no coinciden')),
+            );
+            return;
+          }
+
+          setState(() => _loadingRegister = true);
+
+          try {
+            // 🔹 Crea usuario en Firebase
+            await AuthService.instance.signUp(
+              email: email,
+              password: pass1,
+              displayName: name,
+            );
+
+            // 🔹 Muestra la pantalla de verificación
+            if (!mounted) return;
+            final verified = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+            );
+
+            // 🔹 Si verificó, entra directo a MainShell
+            if (verified == true && mounted) {
+              Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const SuccessAccountPage()),
+              );
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e')),
+            );
+          } finally {
+            if (mounted) setState(() => _loadingRegister = false);
+          }
+        },
+
           child: const Text('CREAR CUENTA'),
         ),
       ],
