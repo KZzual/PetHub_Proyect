@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'screens/login_page.dart'; // Importa la página de login
 import 'utils/app_colors.dart'; // Importa la paleta de colores
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // <-- esta línea es clave
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
