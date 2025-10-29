@@ -194,9 +194,14 @@ class _LoginPageState extends State<LoginPage> {
                 const Text('Recuérdame'),
               ],
             ),
-            TextButton(
-              onPressed: () {},
-              child: const Text('¿Olvidaste tu contraseña?'),
+            Flexible(
+              child: TextButton(
+                onPressed: () {},
+                child: const Text(
+                  '¿Olvidaste tu contraseña?',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
           ],
         ),
