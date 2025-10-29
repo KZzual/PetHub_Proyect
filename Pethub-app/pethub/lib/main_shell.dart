@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+// 1. IMPORTAMOS GOOGLE FONTS
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_page.dart';
 import 'screens/create_post_page.dart';
 import 'screens/post_history_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/messages_page.dart';
-// 1. IMPORTAMOS LA ÚLTIMA PÁGINA: NOTIFICACIONES
 import 'screens/notifications_page.dart'; 
 import 'utils/app_colors.dart';
 
@@ -18,27 +19,24 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
-  // Títulos para la barra superior
   static const List<String> _pageTitles = [
-    'PetHub - Inicio',
+    'PetHub', // Cambiado de "PetHub - Inicio" para que quede mejor con la fuente
     'Historial de Posts',
-    'Publicar', // No se usa, ya que 'Publicar' es un modal
-    'Notificaciones', // Título actualizado
+    'Publicar', 
+    'Notificaciones',
     'Mensajes'
   ];
 
-  // Páginas que se mostrarán en el cuerpo
   static final List<Widget> _stackPages = <Widget>[
     const HomePage(), 
     const PostHistoryPage(),
-    const SizedBox.shrink(), // Placeholder para el índice 2 (Publicar)
-    // 2. ¡CONECTAMOS LA PÁGINA DE NOTIFICACIONES!
-    const NotificationsPage(), // Reemplazamos el Placeholder
+    const SizedBox.shrink(),
+    const NotificationsPage(), 
     const MessagesPage(), 
   ];
 
   void _onItemTapped(int index) {
-    if (index == 2) { // Índice 2 es el botón '+'
+    if (index == 2) { 
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const CreatePostPage()),
@@ -55,9 +53,17 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       appBar: AppBar(
         leading: const Icon(Icons.pets, color: AppColors.textLight),
+        // 2. ¡AQUÍ ESTÁ LA CORRECCIÓN!
         title: Text(
-          _pageTitles[_selectedIndex], // El título cambia con la pestaña
-          style: const TextStyle(color: AppColors.textLight)
+          _pageTitles[_selectedIndex],
+          // Usamos el método 'getFont' y pasamos 'Pacifico' como string
+          style: GoogleFonts.getFont(
+            'Pacifico',
+            textStyle: const TextStyle(
+              color: AppColors.textLight,
+              fontSize: 22, // Ajustamos el tamaño para que se vea bien
+            ),
+          ),
         ),
         elevation: 0,
         actions: [
