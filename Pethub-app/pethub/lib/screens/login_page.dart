@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-// 1. IMPORTAMOS EL MAIN SHELL (el contenedor de la app)
-import '../main_shell.dart'; 
+import 'package:pethub/main_shell.dart';
 import '../utils/app_colors.dart'; 
 // Auth
 import '../auth_service.dart';
 import 'verify_email_page.dart';
 import 'success_account_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
+  
   @override
   State<LoginPage> createState() => _LoginPageState();
   
@@ -30,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _regPassCtrl    = TextEditingController();
   final TextEditingController _regPass2Ctrl   = TextEditingController();
   bool _loadingRegister = false;
+  bool _rememberMe = true;
 
    @override
   void dispose() {
@@ -183,44 +184,51 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // Formulario de INICIAR SESIÓN
-  Widget _buildLoginForm() {
-    return Column(
-      key: const ValueKey('login'),
-      children: [
-         Text(
-          'Bienvenido de vuelta',
-          style: TextStyle(
-            fontSize: 24, 
-            fontWeight: FontWeight.bold, 
-            color: AppColors.textDark
+    Widget _buildLoginForm() {
+      return Column(
+        key: const ValueKey('login'),
+        children: [
+          Text(
+            'Bienvenido de vuelta',
+            style: TextStyle(
+              fontSize: 24, 
+              fontWeight: FontWeight.bold, 
+              color: AppColors.textDark
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Ingresa tus credenciales para acceder',
-          style: TextStyle(color: Colors.grey),
-        ),
-        const SizedBox(height: 24),
-        _buildTextField(
-        hint: 'Correo Electrónico', icon: Icons.email_outlined, controller: _loginEmailCtrl,),
-        const SizedBox(height: 16),
-        _buildTextField(
-          hint: 'Contraseña',
-          icon: Icons.lock_outline,
-          isPassword: true,
-          isObscure: _isPasswordObscure,
-          controller: _loginPassCtrl,
-          onToggleVisibility: () {
-            setState(() => _isPasswordObscure = !_isPasswordObscure);
-          },
-        ),
-        const SizedBox(height: 16),
-        Row(
+          const SizedBox(height: 8),
+          const Text(
+            'Ingresa tus credenciales para acceder',
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          _buildTextField(
+          hint: 'Correo Electrónico', icon: Icons.email_outlined, controller: _loginEmailCtrl,),
+          const SizedBox(height: 16),
+          _buildTextField(
+            hint: 'Contraseña',
+            icon: Icons.lock_outline,
+            isPassword: true,
+            isObscure: _isPasswordObscure,
+            controller: _loginPassCtrl,
+            onToggleVisibility: () {
+              setState(() => _isPasswordObscure = !_isPasswordObscure);
+            },
+          ),
+          const SizedBox(height: 16),
+          Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Checkbox(value: false, onChanged: (val) {}),
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (val) {
+                    setState(() {
+                      _rememberMe = val ?? true;
+                    });
+                  },
+                ),
                 const Text('Recuérdame'),
               ],
             ),
@@ -237,62 +245,68 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 50),
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.textLight,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.textLight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
             ),
-          ),
-          onPressed: _loadingLogin ? null : () async {
-            final email = _loginEmailCtrl.text.trim();
-            final pass  = _loginPassCtrl.text.trim();
+            onPressed: _loadingLogin ? null : () async {
+              final email = _loginEmailCtrl.text.trim();
+              final pass  = _loginPassCtrl.text.trim();
 
-            if (email.isEmpty || pass.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Ingresa correo y contraseña')),
-              );
-              return;
-            }
-            setState(() => _loadingLogin = true);
-            try {
-              await AuthService.instance.signIn(email: email, password: pass);
-
-              final verified = await AuthService.instance.isEmailVerified();
-              if (!mounted) return;
-
-              if (!verified) {
-                final ok = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+              if (email.isEmpty || pass.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Ingresa correo y contraseña')),
                 );
-                if (ok == true) {
+                return;
+              }
+
+              setState(() => _loadingLogin = true);
+
+              try {
+                // ✅ Guardamos si quiere recordar sesión
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('remember_me', _rememberMe);
+
+                await AuthService.instance.signIn(email: email, password: pass);
+
+                final verified = await AuthService.instance.isEmailVerified();
+                if (!mounted) return;
+
+                if (!verified) {
+                  final ok = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+                  );
+                  if (ok == true) {
+                    Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (_) => const SuccessAccountPage()),
+                    );
+                  }
+                } else {
                   Navigator.pushReplacement(
                     context, MaterialPageRoute(builder: (_) => const MainShell()),
                   );
                 }
-              } else {
-                Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => const MainShell()),
-                );
-              }
 
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: ${e.toString()}')),
-              );
-            } finally {
-              if (mounted) setState(() => _loadingLogin = false);
-            }
-        },
-          child: const Text('INICIAR SESIÓN'),
-        ),
-      ],
-    );
-  }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: ${e.toString()}')),
+                );
+              } finally {
+                if (mounted) setState(() => _loadingLogin = false);
+              }
+            },
+            child: const Text('INICIAR SESIÓN'),
+          ),
+        ],
+      );
+    }
 
   // Formulario de CREAR CUENTA
   Widget _buildRegisterForm() {

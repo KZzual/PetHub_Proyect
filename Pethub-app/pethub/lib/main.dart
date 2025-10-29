@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'main_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,9 +51,38 @@ class _DeciderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user != null && user.emailVerified) {
-      return const MainShell();
+    return FutureBuilder<bool>(
+      future: _checkRememberMe(user),
+      builder: (context, snapshot) {
+        // Mientras carga preferencia → pantalla en blanco (o loader en un futuro)
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
+
+        // Si debe ir al Home
+        if (snapshot.data == true) {
+          return const MainShell();
+        }
+
+        // Si no → login
+        return const LoginPage();
+      },
+    );
+  }
+
+  Future<bool> _checkRememberMe(User? user) async {
+    // Si no hay usuario o no verificó → login
+    if (user == null || !user.emailVerified) return false;
+
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? true;
+
+    // Si NO marcó recordar → cerrar sesión automáticamente
+    if (!rememberMe) {
+      await FirebaseAuth.instance.signOut();
+      return false;
     }
-    return const LoginPage();
+
+    return true;
   }
 }

@@ -75,7 +75,7 @@ class _SuccessAccountPageState extends State<SuccessAccountPage>
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'Tu cuenta ha sido verificada correctamente.\n'
+                  'Tu correo se verificó correctamente\n'
                   'Ahora puedes comenzar a usar PetHub.',
                   style: TextStyle(
                     fontSize: 16,

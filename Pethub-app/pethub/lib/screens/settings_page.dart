@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import 'login_page.dart'; // Importamos Login para "Cerrar Sesión"
+import 'package:shared_preferences/shared_preferences.dart';
+import '../auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -84,13 +86,19 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
             leading: const Icon(Icons.logout, color: Colors.red),
-            onTap: () {
-              // Navega a la LoginPage y elimina todas las rutas anteriores
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-                (Route<dynamic> route) => false, // Elimina todo lo demás
-              );
+            onTap: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('remember_me', false); // 🔴 No recordar más
+
+              await AuthService.instance.signOut(); // 🔥 Cierra sesión en Firebase
+
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (_) => false,
+                );
+              }
             },
           ),
         ],
