@@ -59,4 +59,5 @@ class DefaultFirebaseOptions {
     projectId: 'pethub-fab88',
     storageBucket: 'pethub-fab88.firebasestorage.app',
   );
+
 }

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 // 1. IMPORTAMOS EL MAIN SHELL (el contenedor de la app)
 import '../main_shell.dart'; 
 import '../utils/app_colors.dart'; 
+// Auth
+import '../auth_service.dart';
+import 'verify_email_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,6 +17,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   // true = muestra Login, false = muestra Registrarse
   bool _isLoginView = true;
+  bool _loadingLogin = false;
+  final TextEditingController _loginEmailCtrl = TextEditingController();
+  final TextEditingController _loginPassCtrl  = TextEditingController();
 
   // Controladores para la visibilidad de la contraseña
   bool _isPasswordObscure = true;
@@ -171,17 +178,17 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(color: Colors.grey),
         ),
         const SizedBox(height: 24),
-        _buildTextField(hint: 'Correo Electrónico', icon: Icons.email_outlined),
+        _buildTextField(
+        hint: 'Correo Electrónico', icon: Icons.email_outlined, controller: _loginEmailCtrl,),
         const SizedBox(height: 16),
         _buildTextField(
           hint: 'Contraseña',
           icon: Icons.lock_outline,
           isPassword: true,
           isObscure: _isPasswordObscure,
+          controller: _loginPassCtrl,
           onToggleVisibility: () {
-            setState(() {
-              _isPasswordObscure = !_isPasswordObscure;
-            });
+            setState(() => _isPasswordObscure = !_isPasswordObscure);
           },
         ),
         const SizedBox(height: 16),
@@ -215,14 +222,47 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(12.0),
             ),
           ),
-          onPressed: () {
-            // 2. ¡AQUÍ ESTÁ LA CORRECCIÓN!
-            // Navegamos al MainShell (el contenedor de la app)
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const MainShell()),
-            );
-          },
+          onPressed: _loadingLogin ? null : () async {
+            final email = _loginEmailCtrl.text.trim();
+            final pass  = _loginPassCtrl.text.trim();
+
+            if (email.isEmpty || pass.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Ingresa correo y contraseña')),
+              );
+              return;
+            }
+            setState(() => _loadingLogin = true);
+            try {
+              await AuthService.instance.signIn(email: email, password: pass);
+
+              final verified = await AuthService.instance.isEmailVerified();
+              if (!mounted) return;
+
+              if (!verified) {
+                final ok = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+                );
+                if (ok == true) {
+                  Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (_) => const MainShell()),
+                  );
+                }
+              } else {
+                Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (_) => const MainShell()),
+                );
+              }
+
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: ${e.toString()}')),
+              );
+            } finally {
+              if (mounted) setState(() => _loadingLogin = false);
+            }
+        },
           child: const Text('INICIAR SESIÓN'),
         ),
       ],
@@ -303,8 +343,10 @@ class _LoginPageState extends State<LoginPage> {
     bool isPassword = false,
     bool isObscure = false,
     VoidCallback? onToggleVisibility,
+    TextEditingController? controller
   }) {
     return TextField(
+      controller: controller,
       obscureText: isObscure,
       decoration: InputDecoration(
         hintText: hint,
