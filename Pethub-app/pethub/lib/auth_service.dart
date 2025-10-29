@@ -62,12 +62,13 @@ class AuthService {
   }
 
   // Olvidé contraseña
-  Future<void> sendPasswordReset(String email) async {
-    await _auth.sendPasswordResetEmail(email: email.trim());
+  Future<void> sendPasswordReset({required String email}) async {
+  await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
   // Cerrar sesión
   Future<void> signOut() async {
     await _auth.signOut();
   }
+
 }

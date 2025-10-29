@@ -36,7 +36,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     final ok = await AuthService.instance.isEmailVerified();
     if (!mounted) return;
     if (ok) {
-      Navigator.pop(context, true); // <- vuelve al login y continua al MainShell
+      Navigator.pop(context, true); //vuelve al login y continua al MainShell
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Aún no verificas el correo')),

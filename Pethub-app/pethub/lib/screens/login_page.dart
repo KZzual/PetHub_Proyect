@@ -226,7 +226,9 @@ class _LoginPageState extends State<LoginPage> {
             ),
             Flexible(
               child: TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  _showPasswordResetDialog();
+                },
                 child: const Text(
                   '¿Olvidaste tu contraseña?',
                   overflow: TextOverflow.ellipsis,
@@ -418,6 +420,58 @@ class _LoginPageState extends State<LoginPage> {
       ],
     );
   }
+
+void _showPasswordResetDialog() {
+  final TextEditingController _resetEmailCtrl = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Recuperar contraseña'),
+        content: TextField(
+          controller: _resetEmailCtrl,
+          decoration: const InputDecoration(
+            hintText: 'Ingresa tu correo',
+            prefixIcon: Icon(Icons.email_outlined),
+          ),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = _resetEmailCtrl.text.trim();
+              if (email.isEmpty) return;
+
+              try {
+                await AuthService.instance.sendPasswordReset(email: email);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Se ha enviado un correo para restablecer tu contraseña',
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: ${e.toString()}')),
+                );
+              }
+            },
+            child: const Text('Enviar'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   // Widget genérico para los campos de texto
   Widget _buildTextField({
