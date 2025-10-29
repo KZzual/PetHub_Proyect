@@ -6,6 +6,8 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'main_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/verify_email_page.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,25 +56,35 @@ class _DeciderPage extends StatelessWidget {
     return FutureBuilder<bool>(
       future: _checkRememberMe(user),
       builder: (context, snapshot) {
-        // Mientras carga preferencia → pantalla en blanco (o loader en un futuro)
+        // Mientras carga preferencia
         if (snapshot.connectionState != ConnectionState.done) {
           return const SizedBox.shrink();
         }
 
-        // Si debe ir al Home
+        // 1️⃣ Si no hay usuario → login
+        if (user == null) {
+          return const LoginPage();
+        }
+
+        // 2️⃣ Si hay usuario pero NO está verificado → mostrar página de verificación
+        if (!user.emailVerified) {
+          return const VerifyEmailPage();
+        }
+
+        // 3️⃣ Si está logueado y verificado → revisar remember_me
         if (snapshot.data == true) {
           return const MainShell();
         }
 
-        // Si no → login
+        // 4️⃣ Si no debe recordar → login
         return const LoginPage();
       },
     );
   }
 
   Future<bool> _checkRememberMe(User? user) async {
-    // Si no hay usuario o no verificó → login
-    if (user == null || !user.emailVerified) return false;
+    // Si no hay usuario → login
+    if (user == null) return false;
 
     final prefs = await SharedPreferences.getInstance();
     final rememberMe = prefs.getBool('remember_me') ?? true;
@@ -86,3 +98,4 @@ class _DeciderPage extends StatelessWidget {
     return true;
   }
 }
+

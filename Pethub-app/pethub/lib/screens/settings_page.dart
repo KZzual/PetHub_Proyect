@@ -88,9 +88,9 @@ class _SettingsPageState extends State<SettingsPage> {
             leading: const Icon(Icons.logout, color: Colors.red),
             onTap: () async {
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('remember_me', false); // 🔴 No recordar más
+              await prefs.setBool('remember_me', false); // No recordar más
 
-              await AuthService.instance.signOut(); // 🔥 Cierra sesión en Firebase
+              await AuthService.instance.signOut(); //Cierra sesión en Firebase
 
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
