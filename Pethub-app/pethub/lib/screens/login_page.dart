@@ -248,6 +248,8 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(color: Colors.grey),
         ),
         const SizedBox(height: 24),
+        _buildTextField(hint: 'Nombre de usuario', icon: Icons.person_outline),
+        const SizedBox(height: 24),
         _buildTextField(hint: 'Nombre Completo', icon: Icons.person_outline),
         const SizedBox(height: 16),
         _buildTextField(hint: 'Número de teléfono móvil', icon: Icons.phone_outlined),
