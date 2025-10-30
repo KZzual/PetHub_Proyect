@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import '../services/user_service.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -9,21 +10,102 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  // TOdo: Cargar los datos actuales del usuario en estos controladores
-  final _nameController = TextEditingController(text: 'María Alejandra González');
-  final _locationController = TextEditingController(text: 'Santiago, Chile');
-  final _descriptionController = TextEditingController(text: 'Amante de los animales...');
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  String? _selectedComuna;
+  bool _loadingData = true;
+
+  // Estado del botón (idle, loading, success)
+  bool _saving = false;
+  bool _savedSuccess = false;
+
+  final List<String> _comunas = [
+    'San Joaquín',
+    'La Florida',
+    'Macul',
+    'Ñuñoa',
+    'Santiago Centro',
+    'Providencia',
+    'La Cisterna',
+    'Maipú',
+    'Puente Alto',
+    'San Miguel'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final data = await UserService.getCurrentUserProfile();
+    if (data != null) {
+      _nameController.text = data['name'] ?? '';
+      _phoneController.text = data['phone'] ?? '';
+      _descriptionController.text = data['description'] ?? '';
+      _selectedComuna = data['comuna'];
+    }
+    if (mounted) {
+      setState(() => _loadingData = false);
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final description = _descriptionController.text.trim();
+
+    if (name.isEmpty || phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nombre y teléfono son obligatorios')),
+      );
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+    });
+
+    await UserService.updateUserProfile(
+      name: name,
+      phone: phone,
+      comuna: _selectedComuna,
+      description: description,
+    );
+
+    // mostrar success visual
+    setState(() {
+      _saving = false;
+      _savedSuccess = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Guardado exitosamente')),
+    );
+
+    // esperar 0.8s y volver
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (mounted) Navigator.pop(context, true);
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _locationController.dispose();
+    _phoneController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingData) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.accent,
       appBar: AppBar(
@@ -35,19 +117,33 @@ class _EditProfilePageState extends State<EditProfilePage> {
           style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
         ),
         actions: [
-          // Botón de Guardar
-          TextButton(
-            onPressed: () {
-              // TOdo: Lógica para guardar los datos
-              Navigator.pop(context); // Volver al perfil
-            },
-            child: const Text(
-              'Guardar',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+              child: _saving
+                  ? const Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ))
+                  : _savedSuccess
+                      ? const Icon(Icons.check_circle, color: AppColors.primary, key: ValueKey("success"))
+                      : TextButton(
+                          key: const ValueKey("saveBtn"),
+                          onPressed: _saveChanges,
+                          child: const Text(
+                            'Guardar',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
             ),
           ),
         ],
@@ -55,7 +151,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       body: ListView(
         padding: const EdgeInsets.all(24.0),
         children: [
-          // --- Sección de Foto de Perfil ---
           Center(
             child: Stack(
               children: [
@@ -63,7 +158,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   radius: 50,
                   backgroundColor: AppColors.primary,
                   child: Icon(Icons.person, color: AppColors.textLight, size: 50),
-                  // backgroundImage: NetworkImage('url_de_la_foto'),
                 ),
                 Positioned(
                   bottom: 0,
@@ -73,7 +167,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     backgroundColor: AppColors.secondary,
                     child: IconButton(
                       icon: const Icon(Icons.edit_outlined, color: AppColors.textLight, size: 18),
-                      onPressed: () { /* Lógica para cambiar foto */ },
+                      onPressed: () {},
                     ),
                   ),
                 ),
@@ -81,61 +175,69 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
           ),
           const SizedBox(height: 32),
-
-          // --- Campos del Formulario ---
           _buildTextField(
             controller: _nameController,
             label: 'Nombre Completo',
             icon: Icons.person_outline,
           ),
           const SizedBox(height: 16),
-          // TOdo: Usar un DatePicker para este campo
           _buildTextField(
-            controller: TextEditingController(text: '15 de Marzo, 1995'),
-            label: 'Fecha de Nacimiento',
-            icon: Icons.calendar_today_outlined,
-            enabled: false, // Deshabilitado, se debe usar un DatePicker
+            controller: _phoneController,
+            label: 'Teléfono',
+            icon: Icons.phone_outlined,
           ),
           const SizedBox(height: 16),
-          _buildTextField(
-            controller: _locationController,
-            label: 'Ubicación',
-            icon: Icons.location_on_outlined,
-          ),
+          _buildComunaDropdown(),
           const SizedBox(height: 16),
           _buildTextField(
             controller: _descriptionController,
-            label: 'Descripción',
+            label: 'Descripción (opcional)',
             icon: Icons.description_outlined,
-            maxLines: 4,
+            maxLines: 3,
           ),
         ],
       ),
     );
   }
 
-  // Widget de ayuda para crear los campos de texto
+  Widget _buildComunaDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedComuna,
+      decoration: InputDecoration(
+        labelText: 'Comuna',
+        prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textDark),
+        filled: true,
+        fillColor: AppColors.background,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      items: _comunas
+          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+          .toList(),
+      onChanged: (value) => setState(() => _selectedComuna = value),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
     int maxLines = 1,
-    bool enabled = true,
   }) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      enabled: enabled,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: AppColors.textDark),
         filled: true,
-        fillColor: AppColors.background, // Fondo blanco
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        floatingLabelStyle: const TextStyle(color: AppColors.primary),
       ),
     );
   }
