@@ -200,23 +200,38 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildComunaDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedComuna,
-      decoration: InputDecoration(
-        labelText: 'Comuna',
-        prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textDark),
-        filled: true,
-        fillColor: AppColors.background,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+    Widget _buildComunaDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(
+            'Comuna',
+            style: TextStyle(
+              fontSize: 13,
+              color: Color.fromARGB(255, 0, 0, 0),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-      ),
-      items: _comunas
-          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-          .toList(),
-      onChanged: (value) => setState(() => _selectedComuna = value),
+        DropdownButtonFormField<String>(
+          value: _selectedComuna,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textDark),
+            filled: true,
+            fillColor: AppColors.background,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          items: _comunas
+              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+              .toList(),
+          onChanged: (value) => setState(() => _selectedComuna = value),
+        ),
+      ],
     );
   }
 
@@ -226,19 +241,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required IconData icon,
     int maxLines = 1,
   }) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.textDark),
-        filled: true,
-        fillColor: AppColors.background,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color.fromARGB(255, 0, 0, 0),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-      ),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: AppColors.textDark),
+            filled: true,
+            fillColor: const Color.fromARGB(255, 255, 255, 255),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
