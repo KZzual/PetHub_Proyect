@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_colors.dart';
 
 class InfoChip extends StatelessWidget {
   final IconData icon;
@@ -13,21 +14,24 @@ class InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: AppColors.accent, // usa tu color temático de fondo suave
         borderRadius: BorderRadius.circular(10.0),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 20.0, color: Colors.grey[700]),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(fontWeight: FontWeight.w500, color: Colors.grey[800]),
-            overflow: TextOverflow.ellipsis, // Evita que el texto se desborde
+          Icon(icon, size: 18.0, color: AppColors.primary),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textDark,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
