@@ -191,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
         key: const ValueKey('login'),
         children: [
           Text(
-            'Bienvenido de vuelta',
+            'Bienvenido a PetHub',
             style: TextStyle(
               fontSize: 24, 
               fontWeight: FontWeight.bold, 
@@ -298,7 +298,7 @@ class _LoginPageState extends State<LoginPage> {
 
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: ${e.toString()}')),
+                  SnackBar(content: Text('Cuenta no existe. Registrese o revise sus datos.')),
                 );
               } finally {
                 if (mounted) setState(() => _loadingLogin = false);
