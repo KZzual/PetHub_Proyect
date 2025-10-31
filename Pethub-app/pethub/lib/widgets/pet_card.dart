@@ -13,6 +13,8 @@ class PetCard extends StatelessWidget {
   final String userId;
   final String userName;
   final String userPhoto;
+  final String timeAgo;
+
 
   const PetCard({
     super.key,
@@ -26,6 +28,7 @@ class PetCard extends StatelessWidget {
     required this.userId,
     required this.userName,
     required this.userPhoto,
+    required this.timeAgo,
   });
 
   @override
@@ -53,12 +56,8 @@ class PetCard extends StatelessWidget {
                 color: AppColors.textDark,
               ),
             ),
-            subtitle: Text(
-              'Hace 1 semana',
-              style: TextStyle(color: Colors.grey[600]),
+            subtitle: Text(timeAgo, style: TextStyle(color: Colors.grey[600])),
             ),
-          ),
-
           // Imagen principal del post
           photoUrl.isNotEmpty
               ? Image.network(

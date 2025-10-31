@@ -69,6 +69,27 @@ class HomePage extends StatelessWidget {
             // --- Lista dinámica de mascotas ---
             ...pets.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
+              final timestamp = data['createdAt'];
+              String timeAgo = '';
+
+              if (timestamp != null) {
+                final postDate = (timestamp as Timestamp).toDate();
+                final diff = DateTime.now().difference(postDate);
+
+                if (diff.inSeconds < 60) {
+                  timeAgo = 'Hace unos segundos';
+                } else if (diff.inMinutes < 60) {
+                  timeAgo = 'Hace ${diff.inMinutes} min';
+                } else if (diff.inHours < 24) {
+                  timeAgo = 'Hace ${diff.inHours} h';
+                } else if (diff.inDays < 7) {
+                  timeAgo = 'Hace ${diff.inDays} días';
+                } else {
+                  final weeks = (diff.inDays / 7).floor();
+                  timeAgo = 'Hace $weeks semana${weeks > 1 ? 's' : ''}';
+                }
+              }
+
               return PetCard(
                   name: data['name'] ?? 'Sin nombre',
                   species: data['species'] ?? 'Desconocido',
@@ -80,6 +101,7 @@ class HomePage extends StatelessWidget {
                   userId: data['userId'] ?? '',
                   userName: data['userName'] ?? 'Usuario desconocido',
                   userPhoto: data['userPhoto'] ?? '',
+                  timeAgo: timeAgo,
                 );
                 }).toList(),
           ],
