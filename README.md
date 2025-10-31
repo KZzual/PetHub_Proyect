@@ -8,21 +8,22 @@ Integra autenticación, perfiles de usuario, y base de datos en tiempo real medi
 ##  Instalación y configuración
 
 ### 1 Clonar el repositorio
+git clone https://github.com/KZzual/PetHub_Proyect
 
 ### 2 Instalar dependencias
-flutter pub get
+- flutter pub get
 
 ### 3 Configurar paquetes principales
-flutter pub add firebase_core
-flutter pub add firebase_auth
-flutter pub add cloud_firestore
-flutter pub add firebase_storage
-flutter pub add shared_preferences
+- flutter pub add firebase_core
+- flutter pub add firebase_auth
+- flutter pub add cloud_firestore
+- flutter pub add firebase_storage
+- flutter pub add shared_preferences
 
 ### 4 Errores y conflictos
-flutter clean
-flutter pub get
+- flutter clean
+- flutter pub get
 
 
 ### 5 Iniciar la app
-flutter run
+- flutter run
