@@ -49,22 +49,26 @@ class UserService {
 
   ///Actualizar perfil del usuario
   static Future<void> updateUserProfile({
-    required String name,
-    required String phone,
-    required String? comuna,
-    required String description,
+    String? name,
+    String? phone,
+    String? comuna,
+    String? description,
+    String? photoUrl,
   }) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
-    final doc = _firestore.collection('users').doc(uid);
+    final Map<String, dynamic> data = {};
 
-    await doc.update({
-      'name': name,
-      'phone': phone,
-      'comuna': comuna,
-      'description': description,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    if (name != null) data['name'] = name;
+    if (phone != null) data['phone'] = phone;
+    if (comuna != null) data['comuna'] = comuna;
+    if (description != null) data['description'] = description;
+    if (photoUrl != null) data['photoUrl'] = photoUrl;
+
+    if (data.isNotEmpty) {
+      await _firestore.collection('users').doc(uid).update(data);
+    }
   }
+
 }

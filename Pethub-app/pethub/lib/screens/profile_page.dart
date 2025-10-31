@@ -39,19 +39,26 @@ class _ProfilePageState extends State<ProfilePage> {
           stream: UserService.streamUserProfile(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return const Text("Cargando...", style: TextStyle(color: AppColors.textDark));
+              return const Text("Cargando...",
+                  style: TextStyle(color: AppColors.textDark));
             }
 
             final user = snapshot.data!;
             final name = user['name'] ?? 'Sin nombre';
             final comuna = user['comuna'] ?? 'No especificada';
+            final photoUrl = user['photoUrl'];
 
             return Row(
               children: [
-                const CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppColors.primary,
-                  child: Icon(Icons.person, color: AppColors.textLight),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.primary.withOpacity(0.2),
+                  backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                      ? NetworkImage(photoUrl)
+                      : null,
+                  child: photoUrl == null || photoUrl.isEmpty
+                      ? const Icon(Icons.person, color: AppColors.textDark)
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Column(
@@ -99,7 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildInfoCard(name, phone, comuna, description),
               const SizedBox(height: 24),
 
-              // ✅ Lista de opciones (en blanco)
+              // ✅ Lista de opciones
               _buildOptionTile(
                 icon: Icons.edit,
                 label: "Editar perfil",
@@ -121,7 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 10),
               _buildOptionTile(
                 icon: Icons.settings,
-                label: "Configuracion",
+                label: "Configuración",
                 onTap: () {
                   Navigator.push(
                     context,
@@ -137,9 +144,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 textColor: Colors.redAccent,
                 onTap: () async {
                   final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('remember_me', false); // No recordar más
+                  await prefs.setBool('remember_me', false);
 
-                  await AuthService.instance.signOut(); //Cierra sesión en Firebase
+                  await AuthService.instance.signOut();
 
                   if (context.mounted) {
                     Navigator.pushAndRemoveUntil(
@@ -161,7 +168,8 @@ class _ProfilePageState extends State<ProfilePage> {
   // =============================
   //  INFO CARD
   // =============================
-  Widget _buildInfoCard(String name, String phone, String comuna, String desc) {
+  Widget _buildInfoCard(
+      String name, String phone, String comuna, String desc) {
     return Card(
       elevation: 0,
       color: AppColors.background,
@@ -169,7 +177,8 @@ class _ProfilePageState extends State<ProfilePage> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          _buildCardHeader('Información Personal', Icons.person, AppColors.secondary),
+          _buildCardHeader(
+              'Información Personal', Icons.person, AppColors.secondary),
           _buildInfoRow(Icons.person_outline, 'Nombre Completo', name),
           _buildInfoRow(Icons.phone_outlined, 'Teléfono', phone),
           _buildInfoRow(Icons.location_on_outlined, 'Comuna', comuna),
@@ -181,7 +190,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // =============================
-  //  NUEVO: OPCIONES EN LISTA
+  //  OPCIONES EN LISTA
   // =============================
   Widget _buildOptionTile({
     required IconData icon,
@@ -203,7 +212,8 @@ class _ProfilePageState extends State<ProfilePage> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        trailing: const Icon(Icons.arrow_forward_ios,
+            size: 16, color: Colors.grey),
         onTap: onTap,
       ),
     );
@@ -238,9 +248,11 @@ class _ProfilePageState extends State<ProfilePage> {
       leading: Icon(icon, color: AppColors.primary),
       title: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+        style: const TextStyle(
+            fontWeight: FontWeight.bold, color: AppColors.textDark),
       ),
-      subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textDark)),
+      subtitle:
+          Text(subtitle, style: const TextStyle(color: AppColors.textDark)),
     );
   }
 }
