@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
 import 'info_chip.dart';
+import '../utils/app_colors.dart';
 
 class PetCard extends StatelessWidget {
   final String name;
@@ -11,6 +11,8 @@ class PetCard extends StatelessWidget {
   final String location;
   final String photoUrl;
   final String userId;
+  final String userName;
+  final String userPhoto;
 
   const PetCard({
     super.key,
@@ -22,69 +24,60 @@ class PetCard extends StatelessWidget {
     required this.location,
     required this.photoUrl,
     required this.userId,
+    required this.userName,
+    required this.userPhoto,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      elevation: 3,
+      margin: EdgeInsets.zero,
+      elevation: 0.0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       color: AppColors.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Encabezado (usuario)
+          // Header con datos del usuario
           ListTile(
-            leading: const CircleAvatar(
-              backgroundImage: NetworkImage(
-                'https://placehold.co/150x150/EAA0A2/white?text=User',
-              ),
+            leading: CircleAvatar(
+              backgroundImage: userPhoto.isNotEmpty
+                  ? NetworkImage(userPhoto)
+                  : const AssetImage('assets/default_user.png') as ImageProvider,
             ),
             title: Text(
-              userId.isNotEmpty ? 'Usuario: $userId' : 'Usuario desconocido',
+              userName,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: AppColors.textDark,
               ),
             ),
-            subtitle: const Text('Hace poco'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.location_on, size: 16.0, color: AppColors.secondary),
-                SizedBox(width: 4),
-                Text('Cerca de ti', style: TextStyle(color: AppColors.secondary)),
-              ],
+            subtitle: Text(
+              'Hace 1 semana',
+              style: TextStyle(color: Colors.grey[600]),
             ),
           ),
 
-          // Imagen principal
+          // Imagen principal del post
           photoUrl.isNotEmpty
               ? Image.network(
                   photoUrl,
                   height: 250,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 250,
-                    color: AppColors.accent,
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Error al cargar imagen',
-                      style: TextStyle(color: AppColors.textDark),
-                    ),
-                  ),
                 )
               : Container(
                   height: 250,
                   color: AppColors.accent,
                   alignment: Alignment.center,
-                  child: const Icon(Icons.pets, size: 60, color: AppColors.textDark),
+                  child: const Text(
+                    'Sin imagen',
+                    style: TextStyle(color: AppColors.textDark),
+                  ),
                 ),
 
-          // Cuerpo de la tarjeta
+          // Info del post
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -93,14 +86,14 @@ class PetCard extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textDark,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // Grilla de información (especie, edad, raza, ubicación)
+                // Fila de info (especie, raza, edad, etc.)
                 Row(
                   children: [
                     Expanded(
@@ -121,7 +114,7 @@ class PetCard extends StatelessWidget {
                           InfoChip(icon: Icons.label_outline, text: breed),
                           const SizedBox(height: 8),
                           InfoChip(
-                            icon: gender.toLowerCase() == 'macho'
+                            icon: gender == 'Macho'
                                 ? Icons.male
                                 : Icons.female,
                             text: gender,
@@ -131,35 +124,11 @@ class PetCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Ejemplo de etiquetas o tags fijos
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 4.0,
-                  children: [
-                    _buildTag('Vacunado', Colors.green),
-                    _buildTag('Sociable', Colors.blue),
-                  ],
-                ),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  // Widget para los tags decorativos
-  Widget _buildTag(String text, Color color) {
-    return Chip(
-      label: Text(
-        text,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
-      backgroundColor: color.withAlpha(38),
-      side: BorderSide.none,
-      avatar: Icon(Icons.check_circle, color: color, size: 18),
     );
   }
 }

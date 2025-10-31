@@ -70,21 +70,24 @@ class HomePage extends StatelessWidget {
             ...pets.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
               return PetCard(
-                name: data['name'] ?? 'Sin nombre',
-                species: data['species'] ?? 'Desconocido',
-                breed: data['breed'] ?? 'Sin raza',
-                gender: data['gender'] ?? 'No especificado',
-                age: data['age'] ?? '',
-                location: data['location'] ?? '',
-                photoUrl: data['photoUrl'] ?? '',
-                userId: data['userId'] ?? '',
-              );
-            }).toList(),
+                  name: data['name'] ?? 'Sin nombre',
+                  species: data['species'] ?? 'Desconocido',
+                  breed: data['breed'] ?? 'Sin raza',
+                  gender: data['gender'] ?? 'No especificado',
+                  age: data['age'] ?? '',
+                  location: data['location'] ?? '',
+                  photoUrl: data['photoUrl'] ?? '',
+                  userId: data['userId'] ?? '',
+                  userName: data['userName'] ?? 'Usuario desconocido',
+                  userPhoto: data['userPhoto'] ?? '',
+                );
+                }).toList(),
           ],
         );
       },
     );
   }
+
 
   // --- Subheader ---
   Widget _buildSubHeader() {

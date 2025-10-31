@@ -167,10 +167,19 @@ class _CreatePostPageState extends State<CreatePostPage> {
         await ref.putFile(_selectedImage!);
         photoUrl = await ref.getDownloadURL();
       }
+      // 2. Obtener datos del usuario actual (nombre y foto)
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-      // 2. Subir datos a Firestore
+      final userData = userDoc.data() ?? {};
+
+      // 3. Subir datos del post a Firestore
       await FirebaseFirestore.instance.collection('pets').add({
         'userId': user.uid,
+        'userName': userData['name'] ?? 'Usuario desconocido',
+        'userPhoto': userData['photoUrl'] ?? '',
         'name': _nameCtrl.text.trim(),
         'species': _selectedSpecies,
         'breed': _breedCtrl.text.trim(),
@@ -180,7 +189,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
         'photoUrl': photoUrl ?? '',
         'createdAt': FieldValue.serverTimestamp(),
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Publicación creada exitosamente')),
       );
