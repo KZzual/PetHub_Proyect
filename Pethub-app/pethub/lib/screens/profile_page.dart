@@ -1,13 +1,16 @@
 // 1. IMPORTS
 import 'package:flutter/material.dart';
+import 'package:pethub/screens/settings_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_page.dart';
+import '../auth_service.dart';
 import '../utils/app_colors.dart';
 import '../widgets/pet_card.dart';
 import 'edit_profile_page.dart';
-import 'settings_page.dart';
 import '../services/user_service.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String? userId; // Opcional (si es perfil de otro usuario)
+  final String? userId;
 
   const ProfilePage({super.key, this.userId});
 
@@ -15,22 +18,13 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
+class _ProfilePageState extends State<ProfilePage> {
   bool _isMyProfile = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
     _isMyProfile = (widget.userId == null);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -41,8 +35,6 @@ class _ProfilePageState extends State<ProfilePage>
         leading: const BackButton(color: AppColors.textDark),
         backgroundColor: AppColors.background,
         elevation: 1,
-        
-        // ✅ Se reemplaza el título por un StreamBuilder para mostrar comuna debajo
         title: StreamBuilder<Map<String, dynamic>?>(
           stream: UserService.streamUserProfile(),
           builder: (context, snapshot) {
@@ -85,34 +77,9 @@ class _ProfilePageState extends State<ProfilePage>
             );
           },
         ),
-
-        actions: [
-          if (_isMyProfile)
-            IconButton(
-              icon: const Icon(Icons.more_horiz, color: AppColors.textDark),
-              onPressed: () => _showSettingsMenu(context),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.flag_outlined, color: AppColors.textDark),
-              onPressed: () {},
-            ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: AppColors.primary,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'TODO'),
-            Tab(text: 'INFORMACIÓN'),
-            Tab(text: 'PUBLICACIONES'),
-            Tab(text: 'ACTIVIDAD'),
-          ],
-        ),
       ),
 
+      // ✅ Contenido principal
       body: StreamBuilder<Map<String, dynamic>?>(
         stream: UserService.streamUserProfile(),
         builder: (context, snapshot) {
@@ -126,13 +93,64 @@ class _ProfilePageState extends State<ProfilePage>
           final comuna = user['comuna'] ?? 'No especificada';
           final description = user['description'] ?? 'Sin descripción';
 
-          return TabBarView(
-            controller: _tabController,
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
             children: [
-              _buildTodoTab(name, phone, comuna, description),
-              _buildInfoTab(name, phone, comuna, description),
-              _buildPublicationsTab(),
-              _buildActivityTab(),
+              _buildInfoCard(name, phone, comuna, description),
+              const SizedBox(height: 24),
+
+              // ✅ Lista de opciones (en blanco)
+              _buildOptionTile(
+                icon: Icons.edit,
+                label: "Editar perfil",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              _buildOptionTile(
+                icon: Icons.photo_library_outlined,
+                label: "Mis publicaciones",
+                onTap: () {
+                  // TODO: ir a pantalla de publicaciones del usuario
+                },
+              ),
+              const SizedBox(height: 10),
+              _buildOptionTile(
+                icon: Icons.settings,
+                label: "Configuracion",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              _buildOptionTile(
+                icon: Icons.logout,
+                label: "Cerrar sesión",
+                iconColor: Colors.redAccent,
+                textColor: Colors.redAccent,
+                onTap: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('remember_me', false); // No recordar más
+
+                  await AuthService.instance.signOut(); //Cierra sesión en Firebase
+
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (_) => false,
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 40),
             ],
           );
         },
@@ -141,89 +159,9 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   // =============================
-  //  MENÚ INFERIOR
-  // =============================
-  void _showSettingsMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext context) {
-        return Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.edit_outlined, color: AppColors.textDark),
-              title: const Text('Editar Perfil', style: TextStyle(color: AppColors.textDark)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const EditProfilePage()));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined, color: AppColors.textDark),
-              title: const Text('Configuración', style: TextStyle(color: AppColors.textDark)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()));
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
-        );
-      },
-    );
-  }
-
-  // =============================
-  //  TABS
-  // =============================
-
-  Widget _buildTodoTab(String name, String phone, String comuna, String desc) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        _buildInfoCard(name, phone, comuna, desc),
-        const SizedBox(height: 16),
-        _buildPublicationsCard(),
-      ],
-    );
-  }
-
-  Widget _buildInfoTab(String name, String phone, String comuna, String desc) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        _buildInfoCard(name, phone, comuna, desc),
-      ],
-    );
-  }
-
-  Widget _buildPublicationsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: const [
-        PetCard(),
-        SizedBox(height: 16),
-        PetCard(),
-      ],
-    );
-  }
-
-  Widget _buildActivityTab() {
-    return const Center(
-      child: Text('La actividad del usuario aparecerá aquí.'),
-    );
-  }
-
-  // =============================
   //  INFO CARD
   // =============================
-  Widget _buildInfoCard(
-      String name, String phone, String comuna, String desc) {
+  Widget _buildInfoCard(String name, String phone, String comuna, String desc) {
     return Card(
       elevation: 0,
       color: AppColors.background,
@@ -242,15 +180,31 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildPublicationsCard() {
+  // =============================
+  //  NUEVO: OPCIONES EN LISTA
+  // =============================
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color iconColor = AppColors.primary,
+    Color textColor = AppColors.textDark,
+  }) {
     return Card(
-      elevation: 0,
-      color: AppColors.background,
+      color: Colors.white,
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      clipBehavior: Clip.antiAlias,
-      child: const Padding(
-        padding: EdgeInsets.all(8.0),
-        child: PetCard(),
+      child: ListTile(
+        leading: Icon(icon, color: iconColor),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        onTap: onTap,
       ),
     );
   }
@@ -269,9 +223,10 @@ class _ProfilePageState extends State<ProfilePage>
           Text(
             title,
             style: const TextStyle(
-                color: AppColors.textLight,
-                fontWeight: FontWeight.bold,
-                fontSize: 16),
+              color: AppColors.textLight,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
           ),
         ],
       ),
@@ -281,9 +236,10 @@ class _ProfilePageState extends State<ProfilePage>
   Widget _buildInfoRow(IconData icon, String title, String subtitle) {
     return ListTile(
       leading: Icon(icon, color: AppColors.primary),
-      title: Text(title,
-          style:
-              const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+      ),
       subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textDark)),
     );
   }

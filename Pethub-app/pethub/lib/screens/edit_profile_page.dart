@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../utils/app_colors.dart';
 import '../services/user_service.dart';
 
@@ -16,7 +17,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String? _selectedComuna;
   bool _loadingData = true;
 
-  // Estado del botón (idle, loading, success)
   bool _saving = false;
   bool _savedSuccess = false;
 
@@ -43,7 +43,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final data = await UserService.getCurrentUserProfile();
     if (data != null) {
       _nameController.text = data['name'] ?? '';
-      _phoneController.text = data['phone'] ?? '';
+      // quitar prefijo si ya viene guardado con +569
+      final storedPhone = data['phone'] ?? '';
+      if (storedPhone.startsWith('+569')) {
+        _phoneController.text = storedPhone.replaceFirst('+569', '');
+      } else {
+        _phoneController.text = storedPhone;
+      }
       _descriptionController.text = data['description'] ?? '';
       _selectedComuna = data['comuna'];
     }
@@ -54,38 +60,54 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _saveChanges() async {
     final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
+    final phoneInput = _phoneController.text.trim();
     final description = _descriptionController.text.trim();
 
-    if (name.isEmpty || phone.isEmpty) {
+    // Validaciones
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nombre y teléfono son obligatorios')),
+        const SnackBar(content: Text('El nombre es obligatorio')),
       );
       return;
     }
 
-    setState(() {
-      _saving = true;
-    });
+    if (phoneInput.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El teléfono es obligatorio')),
+      );
+      return;
+    }
+
+    if (phoneInput.length != 9 || int.tryParse(phoneInput) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Numero de telefono incompleto'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final fullPhone = '+569$phoneInput';
+
+    setState(() => _saving = true);
 
     await UserService.updateUserProfile(
       name: name,
-      phone: phone,
+      phone: fullPhone,
       comuna: _selectedComuna,
       description: description,
     );
 
-    // mostrar success visual
     setState(() {
       _saving = false;
       _savedSuccess = true;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('✅ Guardado exitosamente')),
+      const SnackBar(content: Text('Perfil actualizado ✅')),
     );
 
-    // esperar 0.8s y volver
     await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) Navigator.pop(context, true);
   }
@@ -121,7 +143,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             padding: const EdgeInsets.only(right: 12),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
-              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: FadeTransition(opacity: anim, child: child)),
+              transitionBuilder: (child, anim) => ScaleTransition(
+                scale: anim,
+                child: FadeTransition(opacity: anim, child: child),
+              ),
               child: _saving
                   ? const Padding(
                       padding: EdgeInsets.all(12.0),
@@ -129,7 +154,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
-                      ))
+                      ),
+                    )
                   : _savedSuccess
                       ? const Icon(Icons.check_circle, color: AppColors.primary, key: ValueKey("success"))
                       : TextButton(
@@ -181,12 +207,46 @@ class _EditProfilePageState extends State<EditProfilePage> {
             icon: Icons.person_outline,
           ),
           const SizedBox(height: 16),
-          _buildTextField(
-            controller: _phoneController,
-            label: 'Teléfono',
-            icon: Icons.phone_outlined,
+
+          // ✅ Campo de teléfono con prefijo +569 fijo
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(left: 4, bottom: 6),
+                child: Text(
+                  'Teléfono',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color.fromARGB(255, 0, 0, 0),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(9),
+                ],
+                style: const TextStyle(color: AppColors.textDark),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textDark),
+                  prefixText: '+569 ',
+                  hintText: 'Numero de telefono',
+                  filled: true,
+                  fillColor: Color.fromARGB(255, 255, 255, 255),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
+
           _buildComunaDropdown(),
           const SizedBox(height: 16),
           _buildTextField(
@@ -200,7 +260,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-    Widget _buildComunaDropdown() {
+  Widget _buildComunaDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -226,9 +286,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               borderSide: BorderSide.none,
             ),
           ),
-          items: _comunas
-              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-              .toList(),
+          items: _comunas.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
           onChanged: (value) => setState(() => _selectedComuna = value),
         ),
       ],

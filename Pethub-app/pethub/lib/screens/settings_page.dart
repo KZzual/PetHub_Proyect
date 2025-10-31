@@ -82,25 +82,6 @@ class _SettingsPageState extends State<SettingsPage> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () { /* Lógica de Términos */ },
           ),
-          const Divider(height: 30, indent: 16, endIndent: 16),
-          ListTile(
-            title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
-            leading: const Icon(Icons.logout, color: Colors.red),
-            onTap: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('remember_me', false); // No recordar más
-
-              await AuthService.instance.signOut(); //Cierra sesión en Firebase
-
-              if (context.mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                  (_) => false,
-                );
-              }
-            },
-          ),
         ],
       ),
     );

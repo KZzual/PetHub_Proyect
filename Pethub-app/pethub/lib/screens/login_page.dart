@@ -1,40 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pethub/main_shell.dart';
-import '../utils/app_colors.dart'; 
-// Auth
+import '../utils/app_colors.dart';
 import '../auth_service.dart';
 import 'verify_email_page.dart';
 import 'success_account_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
 
-
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-  
+
   @override
   State<LoginPage> createState() => _LoginPageState();
-  
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // true = muestra Login, false = muestra Registrarse
   bool _isLoginView = true;
-  //LOGIN
+
+  // LOGIN
   bool _loadingLogin = false;
   final TextEditingController _loginEmailCtrl = TextEditingController();
-  final TextEditingController _loginPassCtrl  = TextEditingController();
-  //REGISTRO
-  final TextEditingController _regNameCtrl    = TextEditingController();
-  final TextEditingController _regPhoneCtrl   = TextEditingController();
-  final TextEditingController _regEmailCtrl   = TextEditingController();
-  final TextEditingController _regPassCtrl    = TextEditingController();
-  final TextEditingController _regPass2Ctrl   = TextEditingController();
+  final TextEditingController _loginPassCtrl = TextEditingController();
+
+  // REGISTRO
+  final TextEditingController _regNameCtrl = TextEditingController();
+  final TextEditingController _regPhoneCtrl = TextEditingController();
+  final TextEditingController _regEmailCtrl = TextEditingController();
+  final TextEditingController _regPassCtrl = TextEditingController();
+  final TextEditingController _regPass2Ctrl = TextEditingController();
   bool _loadingRegister = false;
   bool _rememberMe = true;
 
-   @override
+  bool _isPasswordObscure = true;
+  bool _isConfirmPasswordObscure = true;
+
+  @override
   void dispose() {
     _loginEmailCtrl.dispose();
     _loginPassCtrl.dispose();
@@ -46,23 +47,16 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-
-  // Controladores para la visibilidad de la contraseña
-  bool _isPasswordObscure = true;
-  bool _isConfirmPasswordObscure = true;
-
   @override
   Widget build(BuildContext context) {
-    // Usamos un Stack para poner la imagen de fondo
     return Stack(
       children: [
-        // 1. Imagen de Fondo
+        // Fondo
         Image.asset(
           'assets/pet_background.jpg',
           height: double.infinity,
           width: double.infinity,
           fit: BoxFit.cover,
-          // Fallback por si la imagen no carga
           errorBuilder: (context, error, stackTrace) {
             return Container(
               color: AppColors.accent,
@@ -72,16 +66,15 @@ class _LoginPageState extends State<LoginPage> {
           },
         ),
 
-        // 2. Contenido de la página (transparente)
+        // Contenido principal
         Scaffold(
-          backgroundColor: Colors.transparent, // Fondo transparente
+          backgroundColor: Colors.transparent,
           body: SingleChildScrollView(
             child: SizedBox(
               height: MediaQuery.of(context).size.height,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                  // 3. La tarjeta
                   child: Container(
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
@@ -89,20 +82,17 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(20.0),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(25), // (0.1 opacidad)
-                          blurRadius: 10,
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 12,
                           offset: const Offset(0, 5),
                         ),
                       ],
                     ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min, // Que se ajuste al contenido
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 4. Botones de Pestaña (Toggle)
                         _buildToggleButtons(),
                         const SizedBox(height: 24),
-
-                        // 5. Formulario (cambia dinámicamente)
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
                           child: _isLoginView
@@ -121,9 +111,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // --- Widgets de Ayuda ---
-
-  // Botones "INICIAR SESIÓN" y "REGISTRARSE"
+  // ---------- Botones Iniciar / Registrar ----------
   Widget _buildToggleButtons() {
     return Container(
       decoration: BoxDecoration(
@@ -134,15 +122,13 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isLoginView = true;
-                });
-              },
+              onTap: () => setState(() => _isLoginView = true),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 decoration: BoxDecoration(
-                  color: _isLoginView ? AppColors.primary.withAlpha(50) : Colors.transparent,
+                  color: _isLoginView
+                      ? AppColors.primary.withAlpha(50)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: Text(
@@ -150,7 +136,8 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: _isLoginView ? AppColors.primary : Colors.grey[600],
+                    color:
+                        _isLoginView ? AppColors.primary : Colors.grey[600],
                   ),
                 ),
               ),
@@ -158,15 +145,13 @@ class _LoginPageState extends State<LoginPage> {
           ),
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isLoginView = false;
-                });
-              },
+              onTap: () => setState(() => _isLoginView = false),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 decoration: BoxDecoration(
-                  color: !_isLoginView ? AppColors.primary.withAlpha(50) : Colors.transparent,
+                  color: !_isLoginView
+                      ? AppColors.primary.withAlpha(50)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: Text(
@@ -174,7 +159,8 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: !_isLoginView ? AppColors.primary : Colors.grey[600],
+                    color:
+                        !_isLoginView ? AppColors.primary : Colors.grey[600],
                   ),
                 ),
               ),
@@ -185,60 +171,58 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Formulario de INICIAR SESIÓN
-    Widget _buildLoginForm() {
-      return Column(
-        key: const ValueKey('login'),
-        children: [
-          Text(
-            'Bienvenido a PetHub',
-            style: TextStyle(
-              fontSize: 24, 
-              fontWeight: FontWeight.bold, 
-              color: AppColors.textDark
-            ),
+  // ---------- LOGIN ----------
+  Widget _buildLoginForm() {
+    return Column(
+      key: const ValueKey('login'),
+      children: [
+        Text(
+          'Bienvenido a PetHub',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textDark,
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Ingresa tus credenciales para acceder',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          _buildTextField(
-          hint: 'Correo Electrónico', icon: Icons.email_outlined, controller: _loginEmailCtrl,),
-          const SizedBox(height: 16),
-          _buildTextField(
-            hint: 'Contraseña',
-            icon: Icons.lock_outline,
-            isPassword: true,
-            isObscure: _isPasswordObscure,
-            controller: _loginPassCtrl,
-            onToggleVisibility: () {
-              setState(() => _isPasswordObscure = !_isPasswordObscure);
-            },
-          ),
-          const SizedBox(height: 16),
-          Row(
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Ingresa tus credenciales para acceder',
+          style: TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 24),
+        _buildTextField(
+          hint: 'Correo Electrónico',
+          icon: Icons.email_outlined,
+          controller: _loginEmailCtrl,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          hint: 'Contraseña',
+          icon: Icons.lock_outline,
+          isPassword: true,
+          isObscure: _isPasswordObscure,
+          controller: _loginPassCtrl,
+          onToggleVisibility: () {
+            setState(() => _isPasswordObscure = !_isPasswordObscure);
+          },
+        ),
+        const SizedBox(height: 16),
+        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
                 Checkbox(
                   value: _rememberMe,
-                  onChanged: (val) {
-                    setState(() {
-                      _rememberMe = val ?? true;
-                    });
-                  },
+                  onChanged: (val) =>
+                      setState(() => _rememberMe = val ?? true),
                 ),
                 const Text('Recuérdame'),
               ],
             ),
             Flexible(
               child: TextButton(
-                onPressed: () {
-                  _showPasswordResetDialog();
-                },
+                onPressed: _showPasswordResetDialog,
                 child: const Text(
                   '¿Olvidaste tu contraseña?',
                   overflow: TextOverflow.ellipsis,
@@ -247,80 +231,35 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
         ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.textLight,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 50),
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.textLight,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
             ),
-            onPressed: _loadingLogin ? null : () async {
-              final email = _loginEmailCtrl.text.trim();
-              final pass  = _loginPassCtrl.text.trim();
-
-              if (email.isEmpty || pass.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ingresa correo y contraseña')),
-                );
-                return;
-              }
-
-              setState(() => _loadingLogin = true);
-
-              try {
-                // ✅ Guardamos si quiere recordar sesión
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('remember_me', _rememberMe);
-
-                await AuthService.instance.signIn(email: email, password: pass);
-
-                final verified = await AuthService.instance.isEmailVerified();
-                if (!mounted) return;
-
-                if (!verified) {
-                  final ok = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
-                  );
-                  if (ok == true) {
-                    Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (_) => const SuccessAccountPage()),
-                    );
-                  }
-                } else {
-                  Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (_) => const MainShell()),
-                  );
-                }
-
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Cuenta no existe. Registrese o revise sus datos.')),
-                );
-              } finally {
-                if (mounted) setState(() => _loadingLogin = false);
-              }
-            },
-            child: const Text('INICIAR SESIÓN'),
+            elevation: 4,
           ),
-        ],
-      );
-    }
+          onPressed: _loadingLogin ? null : _handleLogin,
+          child: const Text('INICIAR SESIÓN'),
+        ),
+      ],
+    );
+  }
 
-  // Formulario de CREAR CUENTA
+  // ---------- REGISTRO ----------
   Widget _buildRegisterForm() {
     return Column(
       key: const ValueKey('register'),
       children: [
-         Text(
+        Text(
           'Crear cuenta',
-           style: TextStyle(
-            fontSize: 24, 
+          style: TextStyle(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.textDark
+            color: AppColors.textDark,
           ),
         ),
         const SizedBox(height: 8),
@@ -329,38 +268,102 @@ class _LoginPageState extends State<LoginPage> {
           style: TextStyle(color: Colors.grey),
         ),
         const SizedBox(height: 24),
-          _buildTextField(hint: 'Nombre Completo', icon: Icons.person_outline, controller: _regNameCtrl),
+
+        _buildTextField(
+          hint: 'Nombre Completo',
+          icon: Icons.person_outline,
+          controller: _regNameCtrl,
+        ),
         const SizedBox(height: 16),
-          _buildTextField(hint: 'Número de teléfono móvil', icon: Icons.phone_outlined, controller: _regPhoneCtrl),
+
+        // ✅ Campo Teléfono chileno +569
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 4, bottom: 6),
+              child: Text(
+                'Número de teléfono móvil',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black),
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.07),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _regPhoneCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(9),
+                ],
+                style: const TextStyle(color: AppColors.textDark),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textDark),
+                  prefixText: '+569 ',
+                  hintText: 'Número de teléfono',
+                  hintStyle: TextStyle(color: Color(0xFF777777)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                    borderSide: BorderSide(color: Color(0xFFDDDDDD)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                    borderSide: BorderSide(color: Color(0xFFDDDDDD)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                    borderSide:
+                        BorderSide(color: AppColors.primary, width: 1.5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
-          _buildTextField(hint: 'Correo Electrónico', icon: Icons.email_outlined, controller: _regEmailCtrl),
+
+        _buildTextField(
+          hint: 'Correo Electrónico',
+          icon: Icons.email_outlined,
+          controller: _regEmailCtrl,
+        ),
         const SizedBox(height: 16),
-          _buildTextField(
+
+        _buildTextField(
           hint: 'Contraseña',
           icon: Icons.lock_outline,
           isPassword: true,
           isObscure: _isPasswordObscure,
           controller: _regPassCtrl,
-          onToggleVisibility: () {
-            setState(() {
-              _isPasswordObscure = !_isPasswordObscure;
-            });
-          },
+          onToggleVisibility: () =>
+              setState(() => _isPasswordObscure = !_isPasswordObscure),
         ),
         const SizedBox(height: 16),
+
         _buildTextField(
           hint: 'Confirmar contraseña',
           icon: Icons.lock_outline,
           isPassword: true,
           isObscure: _isConfirmPasswordObscure,
           controller: _regPass2Ctrl,
-          onToggleVisibility: () {
-            setState(() {
-              _isConfirmPasswordObscure = !_isConfirmPasswordObscure;
-            });
-          },
+          onToggleVisibility: () => setState(
+              () => _isConfirmPasswordObscure = !_isConfirmPasswordObscure),
         ),
         const SizedBox(height: 24),
+
         OutlinedButton(
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 50),
@@ -370,163 +373,240 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(12.0),
             ),
           ),
-         onPressed: _loadingRegister ? null : () async {
-          final name  = _regNameCtrl.text.trim();
-          final phone = _regPhoneCtrl.text.trim();
-          final email = _regEmailCtrl.text.trim();
-          final pass1 = _regPassCtrl.text.trim();
-          final pass2 = _regPass2Ctrl.text.trim();
-
-          if (name.isEmpty || phone.isEmpty || email.isEmpty || pass1.isEmpty || pass2.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Completa todos los campos')),
-            );
-            return;
-          }
-
-          if (pass1.length < 6) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres')),
-            );
-            return;
-          }
-
-          if (pass1 != pass2) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Las contraseñas no coinciden')),
-            );
-            return;
-          }
-
-          setState(() => _loadingRegister = true);
-
-          try {
-            // 🔹 Crea usuario en Firebase
-            await AuthService.instance.signUp(
-              email: email,
-              password: pass1,
-              displayName: name,
-            );
-
-            // 🔹 Guardar datos en Firestore
-            await UserService.createUserProfile(
-              name: name,
-              email: email,
-              phone: phone,
-            );
-            
-            // 🔹 Muestra la pantalla de verificación
-            if (!mounted) return;
-            final verified = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
-            );
-
-            // 🔹 Si verificó, entra directo a MainShell
-            if (verified == true && mounted) {
-              Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const SuccessAccountPage()),
-              );
-            }
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e')),
-            );
-          } finally {
-            if (mounted) setState(() => _loadingRegister = false);
-          }
-        },
-
+          onPressed: _loadingRegister ? null : _handleRegister,
           child: const Text('CREAR CUENTA'),
         ),
       ],
     );
   }
 
-void _showPasswordResetDialog() {
-  final TextEditingController _resetEmailCtrl = TextEditingController();
+  // ---------- Funciones ----------
+  Future<void> _handleLogin() async {
+    final email = _loginEmailCtrl.text.trim();
+    final pass = _loginPassCtrl.text.trim();
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Recuperar contraseña'),
-        content: TextField(
-          controller: _resetEmailCtrl,
-          decoration: const InputDecoration(
-            hintText: 'Ingresa tu correo',
-            prefixIcon: Icon(Icons.email_outlined),
-          ),
-          keyboardType: TextInputType.emailAddress,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final email = _resetEmailCtrl.text.trim();
-              if (email.isEmpty) return;
-
-              try {
-                await AuthService.instance.sendPasswordReset(email: email);
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Se ha enviado un correo para restablecer tu contraseña',
-                      ),
-                    ),
-                  );
-                }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: ${e.toString()}')),
-                );
-              }
-            },
-            child: const Text('Enviar'),
-          ),
-        ],
+    if (email.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingresa correo y contraseña')),
       );
-    },
-  );
-}
+      return;
+    }
 
-  // Widget genérico para los campos de texto
+    setState(() => _loadingLogin = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('remember_me', _rememberMe);
+
+      await AuthService.instance.signIn(email: email, password: pass);
+      final verified = await AuthService.instance.isEmailVerified();
+
+      if (!mounted) return;
+      if (!verified) {
+        final ok = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+        );
+        if (ok == true) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const SuccessAccountPage()),
+          );
+        }
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainShell()),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cuenta no existe. Regístrese o revise sus datos.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loadingLogin = false);
+    }
+  }
+
+  Future<void> _handleRegister() async {
+    final name = _regNameCtrl.text.trim();
+    final phone = _regPhoneCtrl.text.trim();
+    final email = _regEmailCtrl.text.trim();
+    final pass1 = _regPassCtrl.text.trim();
+    final pass2 = _regPass2Ctrl.text.trim();
+
+    if (name.isEmpty ||
+        phone.isEmpty ||
+        email.isEmpty ||
+        pass1.isEmpty ||
+        pass2.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Completa todos los campos')),
+      );
+      return;
+    }
+
+    if (phone.length != 8 || int.tryParse(phone) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Número inválido. Debe tener formato +569XXXXXXXX'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    if (pass1.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('La contraseña debe tener al menos 6 caracteres')),
+      );
+      return;
+    }
+
+    if (pass1 != pass2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Las contraseñas no coinciden')),
+      );
+      return;
+    }
+
+    setState(() => _loadingRegister = true);
+    try {
+      await AuthService.instance
+          .signUp(email: email, password: pass1, displayName: name);
+
+      await UserService.createUserProfile(
+        name: name,
+        email: email,
+        phone: '+569$phone',
+      );
+
+      if (!mounted) return;
+      final verified = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+      );
+
+      if (verified == true && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SuccessAccountPage()),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _loadingRegister = false);
+    }
+  }
+
+  void _showPasswordResetDialog() {
+    final TextEditingController _resetEmailCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Recuperar contraseña'),
+          content: TextField(
+            controller: _resetEmailCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Ingresa tu correo',
+              prefixIcon: Icon(Icons.email_outlined),
+            ),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = _resetEmailCtrl.text.trim();
+                if (email.isEmpty) return;
+                try {
+                  await AuthService.instance.sendPasswordReset(email: email);
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Se ha enviado un correo para restablecer tu contraseña'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              },
+              child: const Text('Enviar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ---------- TextField reutilizable ----------
   Widget _buildTextField({
     required String hint,
     required IconData icon,
     bool isPassword = false,
     bool isObscure = false,
     VoidCallback? onToggleVisibility,
-    TextEditingController? controller
+    TextEditingController? controller,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: isObscure,
-      decoration: InputDecoration(
-        hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.grey[600]),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  isObscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                ),
-                onPressed: onToggleVisibility,
-              )
-            : null,
-        filled: true,
-        fillColor: AppColors.accent,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide.none,
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isObscure,
+        style: const TextStyle(color: AppColors.textDark),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: Color(0xFF777777)),
+          prefixIcon: Icon(icon, color: AppColors.textDark),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    isObscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textDark,
+                  ),
+                  onPressed: onToggleVisibility,
+                )
+              : null,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide:
+                const BorderSide(color: AppColors.primary, width: 1.5),
+          ),
         ),
       ),
     );
   }
 }
-
