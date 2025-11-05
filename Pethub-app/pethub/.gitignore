@@ -12,6 +12,8 @@
 .swiftpm/
 migrate_working_dir/
 vision_api_key.txt
+.pubspec.lock
+
 # IntelliJ related
 *.iml
 *.ipr
