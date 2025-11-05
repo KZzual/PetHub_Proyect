@@ -276,14 +276,14 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 16),
 
-        // ✅ Campo Teléfono chileno +569
+        // campo Teléfono chileno +569
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Padding(
               padding: EdgeInsets.only(left: 4, bottom: 6),
               child: Text(
-                'Número de teléfono móvil',
+                'Número de teléfono',
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -310,7 +310,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: const TextStyle(color: AppColors.textDark),
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textDark),
-                  prefixText: '+569 ',
+                  prefixText: '+56 ',
                   hintText: 'Número de teléfono',
                   hintStyle: TextStyle(color: Color(0xFF777777)),
                   filled: true,
@@ -450,7 +450,7 @@ class _LoginPageState extends State<LoginPage> {
     if (phone.length != 8 || int.tryParse(phone) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Número inválido. Debe tener formato +569XXXXXXXX'),
+          content: Text('Número inválido'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -480,7 +480,7 @@ class _LoginPageState extends State<LoginPage> {
       await UserService.createUserProfile(
         name: name,
         email: email,
-        phone: '+569$phone',
+        phone: '+56$phone',
       );
 
       if (!mounted) return;

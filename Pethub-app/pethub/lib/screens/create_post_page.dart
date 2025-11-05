@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/app_colors.dart';
+import '../services/ai_service.dart';
 
 class CreatePostPage extends StatefulWidget {
   const CreatePostPage({super.key});
@@ -18,19 +19,25 @@ class _CreatePostPageState extends State<CreatePostPage> {
   final _breedCtrl = TextEditingController();
   final _ageCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
-  String? _selectedSpecies;
-  final List<bool> _genderSelection = [false, false]; // Macho / Hembra
-  bool _loading = false;
+  final _descCtrl = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
+  String? _selectedSpecies;
+  final List<bool> _genderSelection = [false, false];
+  bool _loading = false;
+  bool _analyzing = false;
+  String? _detectedType;
+
   File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear Publicación',
-            style: TextStyle(color: AppColors.textLight)),
+        title: const Text(
+          'Crear Publicación',
+          style: TextStyle(color: AppColors.textLight),
+        ),
         iconTheme: const IconThemeData(color: AppColors.textLight),
       ),
       body: SingleChildScrollView(
@@ -38,7 +45,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- FOTO ---
             const Text(
               'Añadir foto',
               style: TextStyle(
@@ -47,8 +53,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   color: AppColors.textDark),
             ),
             const SizedBox(height: 8),
+
+            // Imagen + IA
             GestureDetector(
-              onTap: _pickImage,
+              onTap: _pickImageAndAnalyze,
               child: Container(
                 height: 180,
                 width: double.infinity,
@@ -74,40 +82,88 @@ class _CreatePostPageState extends State<CreatePostPage> {
                               style: TextStyle(color: Colors.grey[700])),
                         ],
                       )
-                    : null,
+                    : _analyzing
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : null,
               ),
             ),
             const SizedBox(height: 24),
 
+            if (_detectedType != null)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOut,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: _detectedType == 'Perro 🐶'
+                      ? Colors.green.shade50
+                      : Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _detectedType == 'Perro 🐶'
+                        ? Colors.green.shade300
+                        : Colors.blue.shade300,
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🧠 Tipo detectado: $_detectedType',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_descCtrl.text.isNotEmpty)
+                      Text(
+                        '💬 Descripción sugerida por IA:\n${_descCtrl.text}',
+                        style: TextStyle(color: Colors.grey[800]),
+                      ),
+                  ],
+                ),
+              ),
+
             const Text(
               'Detalles de la mascota',
               style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark,
+              ),
             ),
             const SizedBox(height: 16),
 
             _buildTextField(_nameCtrl, 'Nombre', Icons.pets_outlined),
             const SizedBox(height: 16),
-
             _buildDropdown(),
             const SizedBox(height: 16),
-
             _buildTextField(_breedCtrl, 'Raza', Icons.label_outline),
             const SizedBox(height: 16),
-
             _buildGenderToggle(),
             const SizedBox(height: 16),
-
-            _buildTextField(_ageCtrl, 'Edad (ej. 6 meses)',
-                Icons.calendar_today_outlined),
+            _buildTextField(
+                _ageCtrl, 'Edad (ej. 6 meses)', Icons.calendar_today_outlined),
             const SizedBox(height: 16),
-
             _buildTextField(
                 _locationCtrl, 'Ubicación', Icons.location_on_outlined),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            _buildTextField(
+              _descCtrl,
+              'Descripción (editable, sugerida por IA si disponible)',
+              Icons.description_outlined,
+              maxLines: 3,
+            ),
 
+            const SizedBox(height: 32),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
@@ -128,18 +184,80 @@ class _CreatePostPageState extends State<CreatePostPage> {
     );
   }
 
-  // --- Subir foto ---
-  Future<void> _pickImage() async {
+  // === Analizar imagen con IA ===
+  Future<void> _pickImageAndAnalyze() async {
     final picked = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
     );
-    if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
+
+    if (picked == null) return;
+
+    setState(() {
+      _selectedImage = File(picked.path);
+      _analyzing = true;
+      _detectedType = null;
+    });
+
+    try {
+      final analysis = await AiService.analyzePetImage(_selectedImage!);
+      final lowerLabels = analysis.labels.map((e) => e.toLowerCase()).toList();
+
+      String detectedType = '';
+      if (lowerLabels.any((l) => l.contains('dog') || l.contains('puppy'))) {
+        detectedType = 'Perro 🐶';
+      } else if (lowerLabels.any((l) => l.contains('cat') || l.contains('kitten'))) {
+        detectedType = 'Gato 🐱';
+      }
+
+      if (detectedType.isEmpty) {
+        _selectedImage = null;
+        _descCtrl.clear();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('Solo se permiten fotos de perros o gatos. :()',
+              style: TextStyle(color: Colors.white)),
+        ));
+        setState(() => _analyzing = false);
+        return;
+      }
+
+      //  Mostrar tipo y descripción sugerida
+      setState(() {
+        _detectedType = detectedType;
+        _selectedSpecies =
+            detectedType.contains('Perro') ? 'Perro' : 'Gato';
+        _descCtrl.text = analysis.autoDescription.isNotEmpty
+            ? analysis.autoDescription
+            : 'Generando descripción...';
+      });
+
+      // Si la IA tarda, actualiza una vez más cuando llegue el texto real
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && analysis.autoDescription.isNotEmpty) {
+          setState(() => _descCtrl.text = analysis.autoDescription);
+        }
+      });
+
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor:
+            detectedType == 'Perro 🐶' ? Colors.green[600] : Colors.blue[600],
+        content: Text(
+          '✅ Imagen detectada como $detectedType',
+          style: const TextStyle(color: Colors.white),
+        ),
+      ));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al analizar imagen: $e')),
+      );
+    } finally {
+      setState(() => _analyzing = false);
     }
   }
 
-  // --- Publicar post ---
+  // === Publicar ===
   Future<void> _publishPost() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -148,34 +266,30 @@ class _CreatePostPageState extends State<CreatePostPage> {
         _selectedSpecies == null ||
         _breedCtrl.text.isEmpty ||
         _ageCtrl.text.isEmpty ||
-        _locationCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor completa todos los campos')),
-      );
+        _locationCtrl.text.isEmpty ||
+        _selectedImage == null ||
+        _detectedType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Por favor completa todos los campos y sube una foto válida.'),
+      ));
       return;
     }
 
     setState(() => _loading = true);
 
     try {
-      // 1. Subir foto al Storage
-      String? photoUrl;
-      if (_selectedImage != null) {
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('pet_photos/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-        await ref.putFile(_selectedImage!);
-        photoUrl = await ref.getDownloadURL();
-      }
-      // 2. Obtener datos del usuario actual (nombre y foto)
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('pet_photos/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await ref.putFile(_selectedImage!);
+      final photoUrl = await ref.getDownloadURL();
+
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
-
       final userData = userDoc.data() ?? {};
 
-      // 3. Subir datos del post a Firestore
       await FirebaseFirestore.instance.collection('pets').add({
         'userId': user.uid,
         'userName': userData['name'] ?? 'Usuario desconocido',
@@ -186,13 +300,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
         'gender': _genderSelection[0] ? 'Macho' : 'Hembra',
         'age': _ageCtrl.text.trim(),
         'location': _locationCtrl.text.trim(),
-        'photoUrl': photoUrl ?? '',
+        'photoUrl': photoUrl,
+        'description': _descCtrl.text.trim(),
+        'detectedType': _detectedType,
         'createdAt': FieldValue.serverTimestamp(),
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Publicación creada exitosamente')),
-      );
 
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Mascota publicada 🎉'),
+      ));
       Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -203,10 +319,12 @@ class _CreatePostPageState extends State<CreatePostPage> {
     }
   }
 
-  // --- Helpers visuales ---
-  Widget _buildTextField(TextEditingController ctrl, String hint, IconData icon) {
+  // === Widgets auxiliares ===
+  Widget _buildTextField(TextEditingController ctrl, String hint, IconData icon,
+      {int maxLines = 1}) {
     return TextField(
       controller: ctrl,
+      maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon, color: Colors.grey[600]),
@@ -226,6 +344,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
       decoration: BoxDecoration(
         color: AppColors.accent,
         borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(
+          color: _selectedSpecies == 'Perro'
+              ? Colors.green.shade300
+              : _selectedSpecies == 'Gato'
+                  ? Colors.blue.shade300
+                  : Colors.grey.shade300,
+          width: 1,
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -235,12 +361,30 @@ class _CreatePostPageState extends State<CreatePostPage> {
             children: [
               Icon(Icons.category_outlined, color: Colors.grey[600]),
               const SizedBox(width: 12),
-              Text('Especie', style: TextStyle(color: Colors.grey[700])),
+              Text(
+                _selectedSpecies == null
+                    ? 'Tipo'
+                    : 'Tipo: $_selectedSpecies',
+                style: TextStyle(color: Colors.grey[700]),
+              ),
             ],
           ),
           icon: const Icon(Icons.arrow_drop_down),
-          onChanged: (String? value) => setState(() => _selectedSpecies = value),
-          items: ['Perro', 'Gato', 'Otro']
+          onChanged: (String? value) {
+            setState(() => _selectedSpecies = value);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                duration: const Duration(seconds: 1),
+                backgroundColor:
+                    value == 'Perro' ? Colors.green[600] : Colors.blue[600],
+                content: Text(
+                  '🔧 Tipo cambiado manualmente a $value',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            );
+          },
+          items: ['Perro', 'Gato']
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),
         ),

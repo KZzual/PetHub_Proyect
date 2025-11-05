@@ -14,7 +14,8 @@ class PetCard extends StatelessWidget {
   final String userName;
   final String userPhoto;
   final String timeAgo;
-
+  final String? autoDescription;
+  final bool? exifValid;
 
   const PetCard({
     super.key,
@@ -29,36 +30,49 @@ class PetCard extends StatelessWidget {
     required this.userName,
     required this.userPhoto,
     required this.timeAgo,
+    this.autoDescription,
+    this.exifValid,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.zero,
-      elevation: 0.0,
+      elevation: 1.5,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       color: AppColors.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header con datos del usuario
+          // --- Header con datos del usuario ---
           ListTile(
             leading: CircleAvatar(
               backgroundImage: userPhoto.isNotEmpty
                   ? NetworkImage(userPhoto)
                   : const AssetImage('assets/default_user.png') as ImageProvider,
             ),
-            title: Text(
-              userName,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
-              ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                ),
+                if (exifValid == true)
+                  const Icon(Icons.verified, color: Colors.green, size: 18)
+                else if (exifValid == false)
+                  const Icon(Icons.warning_amber, color: Colors.orange, size: 18),
+              ],
             ),
             subtitle: Text(timeAgo, style: TextStyle(color: Colors.grey[600])),
-            ),
-          // Imagen principal del post
+          ),
+
+          // --- Imagen principal ---
           photoUrl.isNotEmpty
               ? Image.network(
                   photoUrl,
@@ -76,20 +90,34 @@ class PetCard extends StatelessWidget {
                   ),
                 ),
 
-          // Info del post
+          // --- Info del post ---
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Nombre de la mascota
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textDark,
                   ),
                 ),
+
+                // Descripción generada por IA
+                if (autoDescription != null && autoDescription!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    autoDescription!,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 16),
 
                 // Fila de info (especie, raza, edad, etc.)
@@ -102,7 +130,8 @@ class PetCard extends StatelessWidget {
                           const SizedBox(height: 8),
                           InfoChip(icon: Icons.calendar_today, text: age),
                           const SizedBox(height: 8),
-                          InfoChip(icon: Icons.location_on_outlined, text: location),
+                          InfoChip(
+                              icon: Icons.location_on_outlined, text: location),
                         ],
                       ),
                     ),

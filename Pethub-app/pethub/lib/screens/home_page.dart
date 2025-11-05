@@ -102,6 +102,8 @@ class HomePage extends StatelessWidget {
                   userName: data['userName'] ?? 'Usuario desconocido',
                   userPhoto: data['userPhoto'] ?? '',
                   timeAgo: timeAgo,
+                  autoDescription: data['autoDescription'] ?? '',
+                  exifValid: data['exifValid'],
                 );
                 }).toList(),
           ],
