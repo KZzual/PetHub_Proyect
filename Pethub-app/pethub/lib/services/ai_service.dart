@@ -37,7 +37,7 @@ class AIAnalysisResult {
 
 // Servicio de IA 
 class AiService {
-  static const String _apiKey = 'AIzaSyBdgEMPJkFyDd7oqzsgMf72O9UutlvlOwU';
+  static const String _apiKey = 'SECRET LOL'; // Reemplazar con clave real
 
   // Analiza imagen local y guarda/carga resultados en caché
   static Future<AIAnalysisResult> analyzePetImage(File imageFile) async {
