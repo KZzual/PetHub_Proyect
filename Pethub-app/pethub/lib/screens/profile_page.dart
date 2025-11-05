@@ -86,7 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
 
-      // ✅ Contenido principal
+      // Contenido principal
       body: StreamBuilder<Map<String, dynamic>?>(
         stream: UserService.streamUserProfile(),
         builder: (context, snapshot) {
@@ -106,7 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildInfoCard(name, phone, comuna, description),
               const SizedBox(height: 24),
 
-              // ✅ Lista de opciones
+              // Lista de opciones
               _buildOptionTile(
                 icon: Icons.edit,
                 label: "Editar perfil",
@@ -165,9 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // =============================
-  //  INFO CARD
-  // =============================
+  //  Tarjeta de perfil
   Widget _buildInfoCard(
       String name, String phone, String comuna, String desc) {
     return Card(
@@ -189,9 +187,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // =============================
+ 
   //  OPCIONES EN LISTA
-  // =============================
   Widget _buildOptionTile({
     required IconData icon,
     required String label,
@@ -219,9 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // =============================
-  //  UTILS
-  // =============================
+  //  Arreglos
   Widget _buildCardHeader(String title, IconData icon, Color color) {
     return Container(
       color: color,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/pet_card.dart';
 import '../utils/app_colors.dart';
+import 'pet_detail_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -90,7 +91,20 @@ class HomePage extends StatelessWidget {
                 }
               }
 
-              return PetCard(
+              // Para abrir la pagina de detalle
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PetDetailPage(
+                        docId: doc.id,
+                        petData: data,
+                      ),
+                    ),
+                  );
+                },
+                child: PetCard(
                   name: data['name'] ?? 'Sin nombre',
                   species: data['species'] ?? 'Desconocido',
                   breed: data['breed'] ?? 'Sin raza',
@@ -102,16 +116,14 @@ class HomePage extends StatelessWidget {
                   userName: data['userName'] ?? 'Usuario desconocido',
                   userPhoto: data['userPhoto'] ?? '',
                   timeAgo: timeAgo,
-                  autoDescription: data['autoDescription'] ?? '',
-                  exifValid: data['exifValid'],
-                );
-                }).toList(),
+                ),
+              );
+            }).toList(),
           ],
         );
       },
     );
   }
-
 
   // --- Subheader ---
   Widget _buildSubHeader() {
