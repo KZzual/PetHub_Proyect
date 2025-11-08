@@ -1,5 +1,6 @@
-// 1. ¡AQUÍ ESTÁ EL IMPORT QUE FALTABA!
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/app_colors.dart';
 
 class MessagesPage extends StatelessWidget {
@@ -7,46 +8,118 @@ class MessagesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Esta página NO tiene su propio Scaffold o AppBar,
-    // porque es controlada por MainShell.
-    return ListView(
-      padding: const EdgeInsets.all(8.0),
-      children: const [
-        // Usaremos un widget personalizado para cada item de la lista
-        _MessageListItem(
-          userName: 'María González',
-          lastMessage: 'Hola, ¿Luna todavía está dispo...',
-          time: '', // La captura no muestra hora para este
-          unreadCount: 2,
-          avatarUrl: 'https://placehold.co/100x100/EAA0A2/white?text=M',
-        ),
-        _MessageListItem(
-          userName: 'Carlos Ruiz',
-          lastMessage: 'Gracias por la información sobr...',
-          time: '1:15 PM',
-          unreadCount: 0, // 0 significa que no muestra badge
-          avatarUrl: 'https://placehold.co/100x100/A2B9EA/white?text=C',
-        ),
-        _MessageListItem(
-          userName: 'Ana Silva',
-          lastMessage: '¿Podríamos conocer a Bella e...',
-          time: '11:45 AM',
-          unreadCount: 1,
-          avatarUrl: 'https://placehold.co/100x100/EADAB2/white?text=A',
-        ),
-      ],
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return const Center(child: Text("Inicia sesión para ver tus mensajes"));
+    }
+
+    final chatStream = FirebaseFirestore.instance
+        .collection('chats')
+        .where('users', arrayContains: currentUser.uid)
+        .orderBy('lastTimestamp', descending: true)
+        .snapshots();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: chatStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // 🔥 Detección clara de error por índice faltante
+        if (snapshot.hasError) {
+          String errorMsg = "Error al cargar los mensajes";
+          if (snapshot.error.toString().contains("FAILED_PRECONDITION")) {
+            errorMsg = "⚠️ Falta un índice en Firestore.\n"
+                "Crea uno para 'users (array-contains)' + 'lastTimestamp (desc)'.";
+          }
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                errorMsg,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text(
+              'Aún no tienes conversaciones 🐾',
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+          );
+        }
+
+        final chats = snapshot.data!.docs;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(8.0),
+          itemCount: chats.length,
+          itemBuilder: (context, index) {
+            final chat = chats[index].data() as Map<String, dynamic>;
+            final participants =
+                Map<String, dynamic>.from(chat['participants'] ?? {});
+
+            final otherUserId = participants.keys.firstWhere(
+              (id) => id != currentUser.uid,
+              orElse: () => '',
+            );
+
+            if (otherUserId.isEmpty) return const SizedBox.shrink();
+
+            final otherUser = participants[otherUserId] ?? {};
+            final userName = otherUser['name'] ?? 'Usuario';
+            final avatarUrl = (otherUser['photoUrl'] ?? '').toString();
+            final lastMessage = chat['lastMessage'] ?? '';
+            final lastTime = chat['lastTimestamp'] != null
+                ? (chat['lastTimestamp'] as Timestamp).toDate()
+                : null;
+
+            final formattedTime = lastTime != null
+                ? "${lastTime.hour.toString().padLeft(2, '0')}:${lastTime.minute.toString().padLeft(2, '0')}"
+                : '';
+
+            return _MessageListItem(
+              userName: userName,
+              lastMessage:
+                  lastMessage.isNotEmpty ? lastMessage : "Sin mensajes aún",
+              time: formattedTime,
+              unreadCount: chat['unreadCount'] ?? 0,
+              avatarUrl: avatarUrl,
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  '/chat',
+                  arguments: {
+                    'chatId': chats[index].id,
+                    'otherUserId': otherUserId,
+                    'otherUserName': userName,
+                    'otherUserPhoto': avatarUrl,
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
 
-// --- Widget Privado para el Item de la Lista de Mensajes ---
-
+// --- Item de la lista ---
 class _MessageListItem extends StatelessWidget {
   final String userName;
   final String lastMessage;
   final String time;
   final int unreadCount;
   final String avatarUrl;
+  final VoidCallback onTap;
 
   const _MessageListItem({
     required this.userName,
@@ -54,6 +127,7 @@ class _MessageListItem extends StatelessWidget {
     required this.time,
     required this.unreadCount,
     required this.avatarUrl,
+    required this.onTap,
   });
 
   @override
@@ -61,14 +135,18 @@ class _MessageListItem extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      color: AppColors.background, // Fondo blanco de la tarjeta
+      color: AppColors.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        onTap: onTap,
         leading: CircleAvatar(
           radius: 25,
-          backgroundImage: NetworkImage(avatarUrl),
           backgroundColor: AppColors.accent,
+          backgroundImage:
+              avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+          child: avatarUrl.isEmpty
+              ? const Icon(Icons.person, color: Colors.white)
+              : null,
         ),
         title: Text(
           userName,
@@ -86,32 +164,22 @@ class _MessageListItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (time.isNotEmpty) // Solo muestra el tiempo si no está vacío
-              Text(
-                time,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
+            if (time.isNotEmpty)
+              Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 4),
-            // Mostramos el badge solo si hay mensajes no leídos
             if (unreadCount > 0)
               _UnreadBadge(count: unreadCount)
             else
-              const SizedBox(height: 20), // Espacio para alinear
+              const SizedBox(height: 20),
           ],
         ),
-        onTap: () {
-          // Lógica para abrir la conversación
-        },
       ),
     );
   }
 }
 
-// --- Widget Privado para el Badge Azul de No Leídos ---
-
 class _UnreadBadge extends StatelessWidget {
   final int count;
-
   const _UnreadBadge({required this.count});
 
   @override
@@ -119,8 +187,8 @@ class _UnreadBadge extends StatelessWidget {
     return Container(
       width: 20,
       height: 20,
-      decoration: const BoxDecoration(
-        color: Colors.blue, // Color del badge
+      decoration: BoxDecoration(
+        color: AppColors.primary,
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -136,4 +204,3 @@ class _UnreadBadge extends StatelessWidget {
     );
   }
 }
-
