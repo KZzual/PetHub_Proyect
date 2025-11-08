@@ -118,7 +118,7 @@ class _ComunaSelectorContentState extends State<_ComunaSelectorContent> {
                         Navigator.pop(context, comuna);
                       },
                     );
-                  }).toList(),
+                  }),
                 ],
               );
             },

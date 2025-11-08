@@ -504,7 +504,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showPasswordResetDialog() {
-    final TextEditingController _resetEmailCtrl = TextEditingController();
+    final TextEditingController resetEmailCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -512,7 +512,7 @@ class _LoginPageState extends State<LoginPage> {
         return AlertDialog(
           title: const Text('Recuperar contraseña'),
           content: TextField(
-            controller: _resetEmailCtrl,
+            controller: resetEmailCtrl,
             decoration: const InputDecoration(
               hintText: 'Ingresa tu correo',
               prefixIcon: Icon(Icons.email_outlined),
@@ -526,7 +526,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final email = _resetEmailCtrl.text.trim();
+                final email = resetEmailCtrl.text.trim();
                 if (email.isEmpty) return;
                 try {
                   await AuthService.instance.sendPasswordReset(email: email);

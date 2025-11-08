@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_page.dart';
 import '../auth_service.dart';
 import '../utils/app_colors.dart';
-import '../widgets/pet_card.dart';
 import 'edit_profile_page.dart';
 import '../services/user_service.dart';
 

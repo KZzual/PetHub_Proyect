@@ -405,7 +405,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ],
           ),
           child: DropdownButtonFormField<String>(
-            value: _selectedComuna,
+            initialValue: _selectedComuna,
             dropdownColor: Colors.white,
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: AppColors.textDark),

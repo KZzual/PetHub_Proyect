@@ -118,7 +118,7 @@ class HomePage extends StatelessWidget {
                   timeAgo: timeAgo,
                 ),
               );
-            }).toList(),
+            }),
           ],
         );
       },

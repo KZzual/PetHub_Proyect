@@ -10,8 +10,6 @@ import 'screens/verify_email_page.dart';
 
 // 1. IMPORTAMOS GOOGLE FONTS
 import 'package:google_fonts/google_fonts.dart';
-import 'screens/login_page.dart'; 
-import 'utils/app_colors.dart'; 
 
 
 

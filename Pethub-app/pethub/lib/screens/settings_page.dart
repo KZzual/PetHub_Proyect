@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
-import 'login_page.dart'; // Importamos Login para "Cerrar Sesión"
-import 'package:shared_preferences/shared_preferences.dart';
-import '../auth_service.dart';
+// Importamos Login para "Cerrar Sesión"
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
