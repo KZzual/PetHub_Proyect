@@ -82,12 +82,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
         _savedSuccess = true;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto de perfil actualizada ✅')),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
+          content: Text('Foto de perfil actualizada ✅')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error al subir la foto: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+            shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0), 
+            ),
+        content: Text('Error al subir la foto: $e')));
     } finally {
       setState(() => _saving = false);
     }
@@ -99,15 +109,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final description = _descriptionController.text.trim();
 
     if (name.isEmpty || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nombre y teléfono son obligatorios')),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
+        content: Text('Nombre y teléfono son obligatorios')),
       );
       return;
     }
 
     if (phone.length != 9 || int.tryParse(phone) == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
           content: Text('Número inválido.'),
           backgroundColor: Colors.redAccent,
         ),
@@ -129,8 +148,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _savedSuccess = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Perfil Actualizado ✅')),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
+      content: Text('Perfil Actualizado ✅')),
     );
 
     await Future.delayed(const Duration(milliseconds: 800));

@@ -386,8 +386,13 @@ class _LoginPageState extends State<LoginPage> {
     final pass = _loginPassCtrl.text.trim();
 
     if (email.isEmpty || pass.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingresa correo y contraseña')),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
+        content: Text('Ingresa correo y contraseña')),
       );
       return;
     }
@@ -419,8 +424,12 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
           content: Text('Cuenta no existe. Regístrese o revise sus datos.'),
         ),
       );
@@ -448,8 +457,12 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (phone.length != 8 || int.tryParse(phone) == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
           content: Text('Número inválido'),
           backgroundColor: Colors.redAccent,
         ),
@@ -459,7 +472,11 @@ class _LoginPageState extends State<LoginPage> {
 
     if (pass1.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ),
             content: Text('La contraseña debe tener al menos 6 caracteres')),
       );
       return;
@@ -467,7 +484,13 @@ class _LoginPageState extends State<LoginPage> {
 
     if (pass1 != pass2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Las contraseñas no coinciden')),
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+          shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0), 
+            ), 
+            content: Text('Las contraseñas no coinciden')),
       );
       return;
     }
@@ -533,7 +556,12 @@ class _LoginPageState extends State<LoginPage> {
                   if (mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+                        shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0), 
+                          ),
                         content: Text(
                             'Se ha enviado un correo para restablecer tu contraseña'),
                       ),
