@@ -213,11 +213,22 @@ class _CreatePostPageState extends State<CreatePostPage> {
       if (detectedType.isEmpty) {
         _selectedImage = null;
         _descCtrl.clear();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          backgroundColor: Colors.redAccent,
-          content: Text('Solo se permiten fotos de perros o gatos. :()',
-              style: TextStyle(color: Colors.white)),
-        ));
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            behavior: SnackBarBehavior.floating, 
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            backgroundColor: Colors.redAccent,
+            content: const Text(
+              'Solo se permiten fotos de mascotas 🐾',
+              style: TextStyle(color: Colors.white),
+            ),
+            duration: Duration(seconds: 3), // opcional: controla cuánto dura visible
+          ),
+        );
+
         setState(() => _analyzing = false);
         return;
       }
@@ -241,6 +252,11 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+        shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0), 
+        ),
         backgroundColor:
             detectedType == 'Perro 🐶' ? Colors.green[600] : Colors.blue[600],
         content: Text(
@@ -269,7 +285,12 @@ class _CreatePostPageState extends State<CreatePostPage> {
         _locationCtrl.text.isEmpty ||
         _selectedImage == null ||
         _detectedType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+        shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0), 
+        ),
         content: Text('Por favor completa todos los campos y sube una foto válida.'),
       ));
       return;
@@ -306,13 +327,24 @@ class _CreatePostPageState extends State<CreatePostPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+        shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0), 
+        ),
         content: Text('Mascota publicada 🎉'),
       ));
       Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al publicar: $e')),
+        SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
+        shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0), 
+        ),
+        content: Text('Error al publicar: $e')),
       );
     } finally {
       setState(() => _loading = false);
@@ -338,59 +370,48 @@ class _CreatePostPageState extends State<CreatePostPage> {
     );
   }
 
-  Widget _buildDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-      decoration: BoxDecoration(
-        color: AppColors.accent,
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(
-          color: _selectedSpecies == 'Perro'
-              ? Colors.green.shade300
-              : _selectedSpecies == 'Gato'
-                  ? Colors.blue.shade300
-                  : Colors.grey.shade300,
-          width: 1,
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedSpecies,
-          isExpanded: true,
-          hint: Row(
-            children: [
-              Icon(Icons.category_outlined, color: Colors.grey[600]),
-              const SizedBox(width: 12),
-              Text(
-                _selectedSpecies == null
-                    ? 'Tipo'
-                    : 'Tipo: $_selectedSpecies',
-                style: TextStyle(color: Colors.grey[700]),
-              ),
-            ],
+    Widget _buildDropdown() {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        decoration: BoxDecoration(
+          color: AppColors.accent,
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(
+            color: _selectedSpecies == 'Perro'
+                ? Colors.green.shade300
+                : _selectedSpecies == 'Gato'
+                    ? Colors.blue.shade300
+                    : Colors.grey.shade300,
+            width: 1,
           ),
-          icon: const Icon(Icons.arrow_drop_down),
-          onChanged: (String? value) {
-            setState(() => _selectedSpecies = value);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                duration: const Duration(seconds: 1),
-                backgroundColor:
-                    value == 'Perro' ? Colors.green[600] : Colors.blue[600],
-                content: Text(
-                  '🔧 Tipo cambiado manualmente a $value',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            );
-          },
-          items: ['Perro', 'Gato']
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
         ),
-      ),
-    );
-  }
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _selectedSpecies,
+            isExpanded: true,
+            hint: Row(
+              children: [
+                Icon(Icons.category_outlined, color: Colors.grey[600]),
+                const SizedBox(width: 12),
+                Text(
+                  _selectedSpecies == null
+                      ? 'Tipo'
+                      : 'Tipo: $_selectedSpecies',
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+              ],
+            ),
+            icon: const Icon(Icons.arrow_drop_down),
+            onChanged: (String? value) {
+              setState(() => _selectedSpecies = value);
+            },
+            items: ['Perro', 'Gato']
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+          ),
+        ),
+      );
+    }
 
   Widget _buildGenderToggle() {
     return Column(
