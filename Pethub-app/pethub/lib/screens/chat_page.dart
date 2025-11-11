@@ -35,9 +35,18 @@ class _ChatPageState extends State<ChatPage> {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundImage: NetworkImage(widget.otherUserPhoto),
+              radius: 20,
+              backgroundColor: AppColors.accent.withOpacity(0.4),
+              backgroundImage: (widget.otherUserPhoto.isNotEmpty &&
+                      widget.otherUserPhoto.startsWith('http'))
+                  ? NetworkImage(widget.otherUserPhoto)
+                  : null,
+              child: (widget.otherUserPhoto.isEmpty ||
+                      !widget.otherUserPhoto.startsWith('http'))
+                  ? const Icon(Icons.person, color: AppColors.textDark)
+                  : null,
             ),
-            const SizedBox(width: 12),
+             const SizedBox(width: 12),
             Text(widget.otherUserName),
           ],
         ),
