@@ -1,107 +1,260 @@
 import 'package:flutter/material.dart';
-// 1. CORRECCIÓN: La ruta correcta para salir de 'screens' y entrar a 'utils'
-import '../utils/app_colors.dart'; 
-// (Se eliminaron los otros imports innecesarios)
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/app_colors.dart';
+import 'pet_detail_page.dart';
 
-class PostHistoryPage extends StatelessWidget {
+class PostHistoryPage extends StatefulWidget {
   const PostHistoryPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // 2. Usamos el AppBar que definimos en main_shell.dart
-      // (Esta página es un 'hijo', no necesita su propio AppBar aquí)
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: const [
-          // Usamos el widget de tarjeta de historial
-          HistoryPostCard(
-            title: 'Luciana de los montes',
-            statusText: 'Aún en búsqueda',
-            dateText: '28/05/25 13:30',
-            statusIcon: Icons.hourglass_top,
-            iconColor: AppColors.secondary, // Naranja
-          ),
-          HistoryPostCard(
-            title: 'Cholito',
-            statusText: 'En su nuevo hogar',
-            dateText: '27/05/25 10:30',
-            statusIcon: Icons.check_circle,
-            iconColor: AppColors.primary, // Teal
-          ),
-          // Puedes añadir más tarjetas aquí
-        ],
-      ),
-    );
-  }
+  State<PostHistoryPage> createState() => _PostHistoryPageState();
 }
 
-// Widget personalizado para la tarjeta de historial
-class HistoryPostCard extends StatelessWidget {
-  final String title;
-  final String statusText;
-  final String dateText;
-  final IconData statusIcon;
-  final Color iconColor;
-
-  const HistoryPostCard({
-    super.key,
-    required this.title,
-    required this.statusText,
-    required this.dateText,
-    required this.statusIcon,
-    required this.iconColor,
-  });
+class _PostHistoryPageState extends State<PostHistoryPage> {
+  String? _selectedFilter;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2.0,
-      margin: const EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      color: AppColors.background, // Color de fondo de la tarjeta
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      return const Center(child: Text("Inicia sesión para ver tu historial"));
+    }
+
+    final postsStream = FirebaseFirestore.instance
+        .collection('pets')
+        .where('userId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+
+    final recentStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('recent_views')
+        .orderBy('viewedAt', descending: true)
+        .limit(5)
+        .snapshots();
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        title: const Text(
+          "Historial y vistas recientes",
+          style: TextStyle(color: AppColors.textLight),
+        ),
+        iconTheme: const IconThemeData(color: AppColors.textLight),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list, color: AppColors.textLight),
+            onSelected: (val) => setState(() => _selectedFilter = val),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: null, child: Text("Todos")),
+              PopupMenuItem(
+                value: "En búsqueda de hogar",
+                child: Text("En búsqueda de hogar"),
+              ),
+              PopupMenuItem(value: "Adoptado", child: Text("Adoptado")),
+            ],
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Título (ej. "Luciana de los montes")
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Fila para el estado (ej. "Aún en búsqueda")
-            Row(
-              children: [
-                Icon(statusIcon, color: iconColor, size: 28),
-                const SizedBox(width: 12),
-                Column(
+            // 🔹 Sección de vistas recientes
+            StreamBuilder<QuerySnapshot>(
+              stream: recentStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                final recent = snapshot.data!.docs;
+
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      statusText,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textDark,
+                    const Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                      child: Text(
+                        "🐾 Vistas recientemente",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dateText,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
+                    SizedBox(
+                      height: 120,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: recent.length,
+                        itemBuilder: (context, i) {
+                          final data =
+                              recent[i].data() as Map<String, dynamic>;
+                          final petId = recent[i].id;
+                          final photoUrl = data['photoUrl'] ?? '';
+                          final name = data['name'] ?? 'Sin nombre';
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      PetDetailPage(docId: petId, petData: data),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              width: 100,
+                              margin: const EdgeInsets.only(right: 10),
+                              child: Column(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: photoUrl.isNotEmpty
+                                        ? Image.network(photoUrl,
+                                            width: 100,
+                                            height: 80,
+                                            fit: BoxFit.cover)
+                                        : Container(
+                                            width: 100,
+                                            height: 80,
+                                            color: AppColors.accent,
+                                            child: const Icon(Icons.pets,
+                                                color: AppColors.textDark),
+                                          ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
-                ),
-              ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // 🔹 Sección de publicaciones del usuario
+            StreamBuilder<QuerySnapshot>(
+              stream: postsStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                var posts = snapshot.data!.docs;
+                if (_selectedFilter != null) {
+                  posts = posts
+                      .where((doc) =>
+                          (doc['status'] ?? '').toString().toLowerCase() ==
+                          _selectedFilter!.toLowerCase())
+                      .toList();
+                }
+
+                final totalCount = posts.length;
+
+                if (posts.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 8.0, left: 4.0),
+                    child: Text(
+                      'No hay publicaciones con este filtro.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 4.0),
+                      child: Row(
+                        children: [
+                          const Text(
+                            "📋 Mis publicaciones",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              "$totalCount",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...posts.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final name = data['name'] ?? 'Sin nombre';
+                      final status = data['status'] ?? 'En búsqueda de hogar';
+                      final createdAt =
+                          (data['createdAt'] as Timestamp?)?.toDate();
+                      final photoUrl = data['photoUrl'] ?? '';
+                      final formattedDate = createdAt != null
+                          ? "${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}"
+                          : "Fecha desconocida";
+
+                      final (icon, color) = switch (status) {
+                        "Adoptado" => (Icons.check_circle, Colors.green),
+                        _ => (Icons.pets, AppColors.primary),
+                      };
+
+                      return HistoryPostCard(
+                        title: name,
+                        statusText: status,
+                        dateText: formattedDate,
+                        statusIcon: icon,
+                        iconColor: color,
+                        photoUrl: photoUrl,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PetDetailPage(docId: doc.id, petData: data),
+                            ),
+                          );
+                        },
+                      );
+                    }).toList(),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -110,3 +263,99 @@ class HistoryPostCard extends StatelessWidget {
   }
 }
 
+class HistoryPostCard extends StatelessWidget {
+  final String title;
+  final String statusText;
+  final String dateText;
+  final IconData statusIcon;
+  final Color iconColor;
+  final String photoUrl;
+  final VoidCallback onTap;
+
+  const HistoryPostCard({
+    super.key,
+    required this.title,
+    required this.statusText,
+    required this.dateText,
+    required this.statusIcon,
+    required this.iconColor,
+    required this.photoUrl,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1.5,
+      margin: const EdgeInsets.only(bottom: 14.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      color: AppColors.background,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: photoUrl.isNotEmpty
+                    ? Image.network(
+                        photoUrl,
+                        width: 75,
+                        height: 75,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        width: 75,
+                        height: 75,
+                        color: AppColors.accent,
+                        child: const Icon(Icons.pets, color: AppColors.textDark),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(statusIcon, color: iconColor, size: 22),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            statusText,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      dateText,
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

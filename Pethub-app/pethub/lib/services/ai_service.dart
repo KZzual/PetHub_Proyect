@@ -38,8 +38,8 @@ class AIAnalysisResult {
 // Servicio de IA 
 class AiService {
   static const String _apiKey = 'AIzaSyBdgEMPJkFyDd7oqzsgMf72O9UutlvlOwU'; // Reemplazar con clave real
-
-  // Analiza imagen local y guarda/carga resultados en caché
+   
+   // Analiza imagen local y guarda/carga resultados en caché
   static Future<AIAnalysisResult> analyzePetImage(File imageFile) async {
     // === 1 Generar un hash único de la imagen ===
     final bytes = await imageFile.readAsBytes();

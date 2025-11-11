@@ -6,6 +6,7 @@ import 'login_page.dart';
 import '../auth_service.dart';
 import '../utils/app_colors.dart';
 import 'edit_profile_page.dart';
+import 'my_post_page.dart';
 import '../services/user_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -121,7 +122,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 icon: Icons.photo_library_outlined,
                 label: "Mis publicaciones",
                 onTap: () {
-                  // TODO: ir a pantalla de publicaciones del usuario
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MyPostsPage()),
+                  );
                 },
               ),
               const SizedBox(height: 10),

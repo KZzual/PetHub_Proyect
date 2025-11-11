@@ -13,19 +13,47 @@ class PetDetailPage extends StatelessWidget {
     required this.petData,
   });
 
+  // 🔥 Guardar la vista reciente del usuario actual
+  Future<void> _registerRecentView() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final recentRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('recent_views')
+          .doc(docId);
+
+      await recentRef.set({
+        'name': petData['name'] ?? 'Sin nombre',
+        'photoUrl': petData['photoUrl'] ?? '',
+        'species': petData['species'] ?? '',
+        'status': petData['status'] ?? '',
+        'viewedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint("❌ Error al registrar vista reciente: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final photoUrl   = (petData['photoUrl'] ?? '') as String;
-    final name       = (petData['name'] ?? 'Sin nombre') as String;
-    final species    = (petData['species'] ?? 'Desconocido') as String;
-    final breed      = (petData['breed'] ?? 'Sin raza') as String;
-    final gender     = (petData['gender'] ?? 'No especificado') as String;
-    final age        = (petData['age'] ?? '') as String;
-    final location   = (petData['location'] ?? '') as String;
-    final userName   = (petData['userName'] ?? 'Usuario desconocido') as String;
-    final userPhoto  = (petData['userPhoto'] ?? '') as String;
-    final userId     = (petData['userId'] ?? '') as String;
-    final description = (petData['description'] ?? petData['autoDescription'] ?? '') as String;
+    // ✅ Registra la visita en Firestore apenas se construye la pantalla
+    _registerRecentView();
+
+    final photoUrl = (petData['photoUrl'] ?? '') as String;
+    final name = (petData['name'] ?? 'Sin nombre') as String;
+    final species = (petData['species'] ?? 'Desconocido') as String;
+    final breed = (petData['breed'] ?? 'Sin raza') as String;
+    final gender = (petData['gender'] ?? 'No especificado') as String;
+    final age = (petData['age'] ?? '') as String;
+    final location = (petData['location'] ?? '') as String;
+    final userName = (petData['userName'] ?? 'Usuario desconocido') as String;
+    final userPhoto = (petData['userPhoto'] ?? '') as String;
+    final userId = (petData['userId'] ?? '') as String;
+    final description =
+        (petData['description'] ?? petData['autoDescription'] ?? '') as String;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -50,13 +78,11 @@ class PetDetailPage extends StatelessWidget {
             )
           else
             _imageFallback(),
-
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🐶 Nombre
                 Text(
                   name,
                   style: const TextStyle(
@@ -66,8 +92,6 @@ class PetDetailPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-
-                // 🏷️ Etiquetas rápidas
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -86,10 +110,7 @@ class PetDetailPage extends StatelessWidget {
                       _pill(icon: Icons.location_on_outlined, label: location),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
-                // 📝 Descripción
                 const Text(
                   'Descripción',
                   style: TextStyle(
@@ -106,12 +127,9 @@ class PetDetailPage extends StatelessWidget {
                     height: 1.3,
                   ),
                 ),
-
                 const SizedBox(height: 24),
                 const Divider(),
                 const SizedBox(height: 8),
-
-                // 👤 Publicado por
                 Row(
                   children: [
                     CircleAvatar(
@@ -121,17 +139,15 @@ class PetDetailPage extends StatelessWidget {
                           userPhoto.isNotEmpty ? NetworkImage(userPhoto) : null,
                       child: userPhoto.isEmpty
                           ? const Icon(Icons.person, color: Colors.white)
-                          : null, // ✅ fallback sin error
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Publicado por',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          const Text('Publicado por',
+                              style: TextStyle(color: Colors.grey)),
                           Text(
                             userName,
                             style: const TextStyle(
@@ -143,8 +159,6 @@ class PetDetailPage extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    // 💬 Botón "Contactar"
                     ElevatedButton.icon(
                       icon: const Icon(Icons.chat_bubble_outline),
                       label: const Text('Contactar'),
@@ -169,7 +183,6 @@ class PetDetailPage extends StatelessWidget {
     );
   }
 
-  // 🔥 Función para iniciar chat o reutilizar existente
   Future<void> _startChat(
     BuildContext context,
     String otherUserId,
