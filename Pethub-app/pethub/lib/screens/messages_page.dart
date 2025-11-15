@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/app_colors.dart';
+import '../services/chat_service.dart';
 
 class MessagesPage extends StatelessWidget {
   const MessagesPage({super.key});
@@ -23,30 +24,29 @@ class MessagesPage extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: chatStream,
       builder: (context, snapshot) {
+        // Cargando
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // 🔥 Detección clara de error por índice faltante
+        // Error índice o Firestore
         if (snapshot.hasError) {
           String errorMsg = "Error al cargar los mensajes";
           if (snapshot.error.toString().contains("FAILED_PRECONDITION")) {
-            errorMsg = "⚠️ Falta un índice en Firestore.\n"
-                "Crea uno para 'users (array-contains)' + 'lastTimestamp (desc)'.";
+            errorMsg =
+                "Falta un índice en Firestore para esta consulta.\n\nCrea uno para:\nusers (array-contains) + lastTimestamp (desc).";
           }
-
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                errorMsg,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
-              ),
+              child: Text(errorMsg,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey)),
             ),
           );
         }
 
+        // Sin chats
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
             child: Text(
@@ -62,9 +62,10 @@ class MessagesPage extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           itemCount: chats.length,
           itemBuilder: (context, index) {
-            final chat = chats[index].data() as Map<String, dynamic>;
+            final chatData = chats[index].data() as Map<String, dynamic>;
+
             final participants =
-                Map<String, dynamic>.from(chat['participants'] ?? {});
+                Map<String, dynamic>.from(chatData['participants'] ?? {});
 
             final otherUserId = participants.keys.firstWhere(
               (id) => id != currentUser.uid,
@@ -73,31 +74,37 @@ class MessagesPage extends StatelessWidget {
 
             if (otherUserId.isEmpty) return const SizedBox.shrink();
 
-            final otherUser = participants[otherUserId] ?? {};
-            final userName = otherUser['name'] ?? 'Usuario';
-            final avatarUrl = (otherUser['photoUrl'] ?? '').toString();
-            final lastMessage = chat['lastMessage'] ?? '';
-            final lastTime = chat['lastTimestamp'] != null
-                ? (chat['lastTimestamp'] as Timestamp).toDate()
-                : null;
+            final other = participants[otherUserId] ?? {};
+            final userName = other['name'] ?? 'Usuario';
+            final avatarUrl = (other['photoUrl'] ?? '').toString();
+            final lastMessage = chatData['lastMessage'] ?? '';
+            final lastTimestamp = chatData['lastTimestamp'];
 
-            final formattedTime = lastTime != null
-                ? "${lastTime.hour.toString().padLeft(2, '0')}:${lastTime.minute.toString().padLeft(2, '0')}"
+            final formattedTime = (lastTimestamp is Timestamp)
+                ? _formatTime(lastTimestamp.toDate())
                 : '';
+
+            final unreadCount = chatData['unreadCount'] ?? 0;
 
             return _MessageListItem(
               userName: userName,
               lastMessage:
                   lastMessage.isNotEmpty ? lastMessage : "Sin mensajes aún",
               time: formattedTime,
-              unreadCount: chat['unreadCount'] ?? 0,
+              unreadCount: unreadCount,
               avatarUrl: avatarUrl,
-              onTap: () {
+              onTap: () async {
+                final chatId = chats[index].id;
+
+                // Resetear mensajes no leídos inmediatamente
+                ChatService.markMessagesAsSeen(chatId);
+
+                // Navegar al chat
                 Navigator.pushNamed(
                   context,
                   '/chat',
                   arguments: {
-                    'chatId': chats[index].id,
+                    'chatId': chatId,
                     'otherUserId': otherUserId,
                     'otherUserName': userName,
                     'otherUserPhoto': avatarUrl,
@@ -109,6 +116,13 @@ class MessagesPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  //Formato de hora
+  static String _formatTime(DateTime time) {
+    final h = time.hour.toString().padLeft(2, '0');
+    final m = time.minute.toString().padLeft(2, '0');
+    return "$h:$m";
   }
 }
 
@@ -165,7 +179,10 @@ class _MessageListItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (time.isNotEmpty)
-              Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text(
+                time,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
             const SizedBox(height: 4),
             if (unreadCount > 0)
               _UnreadBadge(count: unreadCount)

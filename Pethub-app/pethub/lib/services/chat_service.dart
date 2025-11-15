@@ -5,7 +5,9 @@ class ChatService {
   static final _firestore = FirebaseFirestore.instance;
   static final _auth = FirebaseAuth.instance;
 
-  /// 🔹 Crea o recupera un chat entre el usuario actual y otro usuario
+  /// ======================================================
+  /// Crear o recuperar un chat entre 2 usuarios
+  /// ======================================================
   static Future<String> createOrGetChat({
     required String otherUserId,
     required String otherUserName,
@@ -26,7 +28,7 @@ class ChatService {
       final data = doc.data();
       if (data['users'] != null &&
           (data['users'] as List).contains(otherUserId)) {
-        return doc.id;
+        return doc.id; // chat ya existe
       }
     }
 
@@ -52,7 +54,9 @@ class ChatService {
     return chatRef.id;
   }
 
-  /// 🔹 Enviar mensaje
+  /// ======================================================
+  /// Enviar mensaje
+  /// ======================================================
   static Future<void> sendMessage({
     required String chatId,
     required String text,
@@ -73,14 +77,16 @@ class ChatService {
       'seen': false,
     });
 
-    // Actualizar chat principal
+    // Actualizar último mensaje en el chat
     await _firestore.collection('chats').doc(chatId).update({
       'lastMessage': text,
       'lastTimestamp': FieldValue.serverTimestamp(),
     });
   }
 
-  /// 🔹 Stream de mensajes (en vivo)
+  /// ======================================================
+  ///  Stream en vivo de mensajes
+  /// ======================================================
   static Stream<QuerySnapshot> streamMessages(String chatId) {
     return _firestore
         .collection('chats')
@@ -88,5 +94,30 @@ class ChatService {
         .collection('messages')
         .orderBy('timestamp', descending: false)
         .snapshots();
+  }
+
+  /// ======================================================
+  ///  Marcar mensajes como VISTOS
+  /// ======================================================
+  static Future<void> markMessagesAsSeen(String chatId) async {
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) return;
+
+    final unread = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('senderId', isNotEqualTo: currentUserId)
+        .where('seen', isEqualTo: false)
+        .get();
+
+    for (var doc in unread.docs) {
+      await doc.reference.update({'seen': true});
+    }
+
+    // Reiniciar contador de no leídos
+    await _firestore.collection('chats').doc(chatId).update({
+      'unreadCount': 0,
+    });
   }
 }
