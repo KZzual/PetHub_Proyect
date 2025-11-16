@@ -251,7 +251,7 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
                           );
                         },
                       );
-                    }).toList(),
+                    }),
                   ],
                 );
               },
