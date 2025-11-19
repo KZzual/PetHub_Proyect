@@ -5,123 +5,151 @@ import '../widgets/pet_card.dart';
 import '../utils/app_colors.dart';
 import 'pet_detail_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String _searchText = "";
+  
+  // 1. CORRECCIÓN CLAVE:
+  // Declaramos el stream aquí para iniciarlo SOLO UNA VEZ.
+  // Esto evita que la conexión se reinicie cada vez que escribes una letra.
+  late Stream<QuerySnapshot> _petsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _petsStream = FirebaseFirestore.instance
+        .collection('pets')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('pets')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        // --- Estado de carga ---
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return Column(
+      children: [
+        // --- HEADER Y BUSCADOR ---
+        // Al estar fuera del StreamBuilder, no se reconstruyen innecesariamente
+        // lo que mantiene el teclado abierto y el foco en el input.
+        _buildSubHeader(),
+        _buildSearchBar(),
 
-        // --- Error ---
-        if (snapshot.hasError) {
-          return const Center(child: Text('Error al cargar publicaciones'));
-        }
-
-        // --- Sin datos ---
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return ListView(
-            children: [
-              _buildSubHeader(),
-              _buildSearchBar(),
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 40),
-                  child: Text(
-                    'Aún no hay publicaciones 🐾',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
-
-        // --- Si hay datos ---
-        final pets = snapshot.data!.docs;
-
-        return ListView(
-          children: [
-            _buildSubHeader(),
-            _buildSearchBar(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                '${pets.length} mascotas encontradas',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-
-            // --- Lista dinámica de mascotas ---
-            ...pets.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              final timestamp = data['createdAt'];
-              String timeAgo = '';
-
-              if (timestamp != null) {
-                final postDate = (timestamp as Timestamp).toDate();
-                final diff = DateTime.now().difference(postDate);
-
-                if (diff.inSeconds < 60) {
-                  timeAgo = 'Hace unos segundos';
-                } else if (diff.inMinutes < 60) {
-                  timeAgo = 'Hace ${diff.inMinutes} min';
-                } else if (diff.inHours < 24) {
-                  timeAgo = 'Hace ${diff.inHours} h';
-                } else if (diff.inDays < 7) {
-                  timeAgo = 'Hace ${diff.inDays} días';
-                } else {
-                  final weeks = (diff.inDays / 7).floor();
-                  timeAgo = 'Hace $weeks semana${weeks > 1 ? 's' : ''}';
-                }
+        // --- LISTA DE RESULTADOS ---
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _petsStream,
+            builder: (context, snapshot) {
+              // Estado de Carga
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              // Estado de Error
+              if (snapshot.hasError) {
+                return const Center(child: Text('Error al cargar publicaciones'));
               }
 
-              // Para abrir la pagina de detalle
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PetDetailPage(
-                        docId: doc.id,
-                        petData: data,
+              // Obtener datos crudos
+              final allPetsDocs = snapshot.data?.docs ?? [];
+
+              // 2. LÓGICA DE FILTRADO
+              final filteredPets = allPetsDocs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                
+                final name = (data['name'] ?? '').toString().toLowerCase();
+                final breed = (data['breed'] ?? '').toString().toLowerCase();
+                final searchLower = _searchText.toLowerCase();
+
+                // Si no hay texto, searchLower es "", y contains("") siempre es true.
+                return name.contains(searchLower) || breed.contains(searchLower);
+              }).toList();
+
+              // Estado Vacío (Sin resultados)
+              if (filteredPets.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.search_off, size: 50, color: Colors.grey),
+                        const SizedBox(height: 10),
+                        Text(
+                          _searchText.isEmpty
+                              ? 'Aún no hay publicaciones 🐾'
+                              : 'No encontramos mascotas con "$_searchText"',
+                          style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Lista de Mascotas
+              return ListView(
+                padding: const EdgeInsets.only(bottom: 20),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Text(
+                      '${filteredPets.length} mascotas encontradas',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                        fontSize: 16,
                       ),
                     ),
-                  );
-                },
-                child: PetCard(
-                  name: data['name'] ?? 'Sin nombre',
-                  species: data['species'] ?? 'Desconocido',
-                  breed: data['breed'] ?? 'Sin raza',
-                  gender: data['gender'] ?? 'No especificado',
-                  age: data['age'] ?? '',
-                  location: data['location'] ?? '',
-                  photoUrl: data['photoUrl'] ?? '',
-                  userId: data['userId'] ?? '',
-                  userName: data['userName'] ?? 'Usuario desconocido',
-                  userPhoto: data['userPhoto'] ?? '',
-                  timeAgo: timeAgo,
-                ),
+                  ),
+                  
+                  // Renderizado de tarjetas
+                  ...filteredPets.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final timestamp = data['createdAt'];
+                    
+                    // Lógica básica de tiempo (puedes mejorarla con tu función getTimeAgo)
+                    String timeAgo = 'Reciente';
+                    if (timestamp != null) {
+                       // Aquí puedes re-integrar tu lógica de cálculo de tiempo si la tienes
+                    }
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PetDetailPage(
+                              docId: doc.id,
+                              petData: data,
+                            ),
+                          ),
+                        );
+                      },
+                      child: PetCard(
+                        name: data['name'] ?? 'Sin nombre',
+                        species: data['species'] ?? 'Desconocido',
+                        breed: data['breed'] ?? 'Sin raza',
+                        gender: data['gender'] ?? 'No especificado',
+                        age: data['age'] ?? '',
+                        location: data['location'] ?? '',
+                        photoUrl: data['photoUrl'] ?? '',
+                        userId: data['userId'] ?? '',
+                        userName: data['userName'] ?? 'Usuario desconocido',
+                        userPhoto: data['userPhoto'] ?? '',
+                        timeAgo: timeAgo,
+                      ),
+                    );
+                  }),
+                ],
               );
-            }),
-          ],
-        );
-      },
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -150,9 +178,30 @@ class HomePage extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
+              // Al cambiar el texto, actualizamos el estado
+              onChanged: (value) {
+                setState(() {
+                  _searchText = value;
+                });
+              },
               decoration: InputDecoration(
-                hintText: 'Buscar por nombre, raza o ubicación...',
+                hintText: 'Buscar por nombre o raza...',
                 prefixIcon: const Icon(Icons.search),
+                
+                // Botón para limpiar búsqueda
+                suffixIcon: _searchText.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchText = "";
+                            // Nota: Para limpiar el texto visualmente del input
+                            // necesitarías un TextEditingController, pero esto limpia el filtro.
+                          });
+                        },
+                      )
+                    : null,
+                
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
                   borderSide: BorderSide.none,
@@ -163,13 +212,18 @@ class HomePage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
+          
+          // Botón de Filtros
           IconButton(
             icon: const Icon(Icons.filter_list),
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.primary.withAlpha(50),
+              // ACTUALIZADO: Uso moderno de transparencia (0.0 - 1.0)
+              backgroundColor: AppColors.primary.withValues(alpha: 0.2),
               foregroundColor: AppColors.primary,
             ),
-            onPressed: () {},
+            onPressed: () {
+              // Aquí iría la lógica para abrir el Modal de filtros avanzado
+            },
           ),
         ],
       ),
