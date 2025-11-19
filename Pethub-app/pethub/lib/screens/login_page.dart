@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         // Fondo
         Image.asset(
-          'assets/pet_background.jpg',
+          'assets/images/background.jpg',
           height: double.infinity,
           width: double.infinity,
           fit: BoxFit.cover,
