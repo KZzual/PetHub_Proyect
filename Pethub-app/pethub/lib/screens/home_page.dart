@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/pet_card.dart';
 import '../utils/app_colors.dart';
 import 'pet_detail_page.dart';
+import '../widgets/pet_filter_modal.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,11 +14,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Variables del Buscador
   String _searchText = "";
   
-  // 1. CORRECCIÓN CLAVE:
-  // Declaramos el stream aquí para iniciarlo SOLO UNA VEZ.
-  // Esto evita que la conexión se reinicie cada vez que escribes una letra.
+  // --- 2. NUEVAS VARIABLES PARA LOS FILTROS ---
+  String _filterSpecies = "Todos"; // Por defecto mostramos todo
+  String _filterGender = "Todos";
+
   late Stream<QuerySnapshot> _petsStream;
 
   @override
@@ -29,103 +32,133 @@ class _HomePageState extends State<HomePage> {
         .snapshots();
   }
 
+  // --- 3. FUNCIÓN PARA ABRIR EL MENU DE FILTROS ---
+  void _showFilters() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent, // Para ver las esquinas redondeadas
+      builder: (context) => PetFilterModal(
+        currentSpecies: _filterSpecies,
+        currentGender: _filterGender,
+        onApply: (species, gender) {
+          // Cuando le den a "Aplicar", actualizamos el estado aquí
+          setState(() {
+            _filterSpecies = species;
+            _filterGender = gender;
+          });
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // --- HEADER Y BUSCADOR ---
-        // Al estar fuera del StreamBuilder, no se reconstruyen innecesariamente
-        // lo que mantiene el teclado abierto y el foco en el input.
         _buildSubHeader(),
-        _buildSearchBar(),
+        _buildSearchBar(), // El botón dentro de aquí llamará a _showFilters
 
-        // --- LISTA DE RESULTADOS ---
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: _petsStream,
             builder: (context, snapshot) {
-              // Estado de Carga
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
-              // Estado de Error
               if (snapshot.hasError) {
                 return const Center(child: Text('Error al cargar publicaciones'));
               }
 
-              // Obtener datos crudos
               final allPetsDocs = snapshot.data?.docs ?? [];
 
-              // 2. LÓGICA DE FILTRADO
+              // --- 4. LÓGICA MAESTRA DE FILTRADO ---
               final filteredPets = allPetsDocs.where((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 
+                // A. Filtro de Texto (Buscador)
                 final name = (data['name'] ?? '').toString().toLowerCase();
                 final breed = (data['breed'] ?? '').toString().toLowerCase();
                 final searchLower = _searchText.toLowerCase();
+                bool passSearch = name.contains(searchLower) || breed.contains(searchLower);
 
-                // Si no hay texto, searchLower es "", y contains("") siempre es true.
-                return name.contains(searchLower) || breed.contains(searchLower);
+                // B. Filtro de Especie (Nuevo)
+                final species = (data['species'] ?? '').toString();
+                bool passSpecies = _filterSpecies == 'Todos' || species == _filterSpecies;
+
+                // C. Filtro de Género (Nuevo)
+                final gender = (data['gender'] ?? '').toString();
+                bool passGender = _filterGender == 'Todos' || gender == _filterGender;
+
+                // TIENE QUE CUMPLIR LAS 3 COSAS
+                return passSearch && passSpecies && passGender;
               }).toList();
 
-              // Estado Vacío (Sin resultados)
+              // --- UI CUANDO NO HAY RESULTADOS ---
               if (filteredPets.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 40),
                     child: Column(
                       children: [
-                        const Icon(Icons.search_off, size: 50, color: Colors.grey),
+                        const Icon(Icons.filter_alt_off, size: 50, color: Colors.grey),
                         const SizedBox(height: 10),
-                        Text(
-                          _searchText.isEmpty
-                              ? 'Aún no hay publicaciones 🐾'
-                              : 'No encontramos mascotas con "$_searchText"',
-                          style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        const Text(
+                          'No encontramos mascotas con esos criterios',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
                         ),
+                        // Botón extra para limpiar si hay filtros activos
+                        if (_filterSpecies != 'Todos' || _filterGender != 'Todos')
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _filterSpecies = 'Todos';
+                                _filterGender = 'Todos';
+                                _searchText = '';
+                              });
+                            },
+                            child: const Text('Limpiar filtros'),
+                          )
                       ],
                     ),
                   ),
                 );
               }
 
-              // Lista de Mascotas
               return ListView(
                 padding: const EdgeInsets.only(bottom: 20),
                 children: [
+                  // Indicador de filtros activos (Opcional pero útil visualmente)
+                  if (_filterSpecies != 'Todos' || _filterGender != 'Todos')
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                      child: Row(
+                        children: [
+                          const Text('Filtros: ', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          if(_filterSpecies != 'Todos') Chip(label: Text(_filterSpecies), visualDensity: VisualDensity.compact,),
+                          const SizedBox(width: 5),
+                          if(_filterGender != 'Todos') Chip(label: Text(_filterGender), visualDensity: VisualDensity.compact,),
+                        ],
+                      ),
+                    ),
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     child: Text(
                       '${filteredPets.length} mascotas encontradas',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 16),
                     ),
                   ),
-                  
-                  // Renderizado de tarjetas
                   ...filteredPets.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    final timestamp = data['createdAt'];
-                    
-                    // Lógica básica de tiempo (puedes mejorarla con tu función getTimeAgo)
-                    String timeAgo = 'Reciente';
-                    if (timestamp != null) {
-                       // Aquí puedes re-integrar tu lógica de cálculo de tiempo si la tienes
-                    }
+                    // Tu lógica de tiempo aquí...
+                    String timeAgo = 'Reciente'; 
 
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PetDetailPage(
-                              docId: doc.id,
-                              petData: data,
-                            ),
+                            builder: (_) => PetDetailPage(docId: doc.id, petData: data),
                           ),
                         );
                       },
@@ -153,7 +186,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // --- Subheader ---
   Widget _buildSubHeader() {
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -161,16 +193,12 @@ class _HomePageState extends State<HomePage> {
       width: double.infinity,
       child: const Text(
         'Encuentra a tu compañero perfecto',
-        style: TextStyle(
-          color: AppColors.textLight,
-          fontSize: 16.0,
-        ),
+        style: TextStyle(color: AppColors.textLight, fontSize: 16.0),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  // --- Barra de búsqueda ---
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -178,34 +206,19 @@ class _HomePageState extends State<HomePage> {
         children: [
           Expanded(
             child: TextField(
-              // Al cambiar el texto, actualizamos el estado
               onChanged: (value) {
-                setState(() {
-                  _searchText = value;
-                });
+                setState(() => _searchText = value);
               },
               decoration: InputDecoration(
                 hintText: 'Buscar por nombre o raza...',
                 prefixIcon: const Icon(Icons.search),
-                
-                // Botón para limpiar búsqueda
                 suffixIcon: _searchText.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            _searchText = "";
-                            // Nota: Para limpiar el texto visualmente del input
-                            // necesitarías un TextEditingController, pero esto limpia el filtro.
-                          });
-                        },
+                        onPressed: () => setState(() => _searchText = ""),
                       )
                     : null,
-                
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide.none,
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
                 filled: true,
                 fillColor: AppColors.accent,
               ),
@@ -213,17 +226,19 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(width: 10),
           
-          // Botón de Filtros
+          // --- 5. CONEXIÓN DEL BOTÓN ---
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(Icons.tune), // Icono de ajustes/filtros
             style: IconButton.styleFrom(
-              // ACTUALIZADO: Uso moderno de transparencia (0.0 - 1.0)
-              backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-              foregroundColor: AppColors.primary,
+              // Si hay filtros activos, pintamos el botón para avisar al usuario
+              backgroundColor: (_filterSpecies != 'Todos' || _filterGender != 'Todos')
+                  ? AppColors.primary 
+                  : AppColors.primary.withValues(alpha: 0.2),
+              foregroundColor: (_filterSpecies != 'Todos' || _filterGender != 'Todos')
+                  ? Colors.white 
+                  : AppColors.primary,
             ),
-            onPressed: () {
-              // Aquí iría la lógica para abrir el Modal de filtros avanzado
-            },
+            onPressed: _showFilters, // <--- LLAMAMOS A LA FUNCIÓN AQUÍ
           ),
         ],
       ),
