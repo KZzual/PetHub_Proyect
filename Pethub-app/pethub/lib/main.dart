@@ -8,8 +8,9 @@ import 'main_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/verify_email_page.dart';
 import 'screens/chat_page.dart';
+import 'screens/pet_detail_page.dart';
 
-// 1. GOOGLE FONTS
+// Google Fonts
 import 'package:google_fonts/google_fonts.dart';
 
 // Firebase Messaging + Local Notifications
@@ -22,11 +23,12 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// Necesario para mensajes en background
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint("🔔 Mensaje en BACKGROUND: ${message.data}");
+  debugPrint("Mensaje en BACKGROUND: ${message.data}");
 }
 
 final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,28 +37,24 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Registrar handler global background
+  // Handler global
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // Inicializar canal de notificaciones locales
-  const AndroidInitializationSettings initSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  const InitializationSettings initSettings =
-      InitializationSettings(android: initSettingsAndroid);
+  // Inicializar notificaciones locales
+  const initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const initSettings = InitializationSettings(android: initAndroid);
 
   await _flutterLocalNotificationsPlugin.initialize(
     initSettings,
     onDidReceiveNotificationResponse: (response) {
-      final payload = response.payload;
-      if (payload != null) {
-        final data = Uri.splitQueryString(payload);
+      if (response.payload != null) {
+        final data = Uri.splitQueryString(response.payload!);
         _MyAppState._handleNotificationNavigation(data);
       }
     },
   );
 
-  // Crear canal de notificación
+  // Canal
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel',
     'Notificaciones Importantes',
@@ -68,9 +66,8 @@ void main() async {
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
-  // Permiso para notificaciones (Android 13+)
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-  await messaging.requestPermission();
+  // Permiso en Android 13+
+  await FirebaseMessaging.instance.requestPermission();
 
   runApp(const MyApp());
 }
@@ -88,17 +85,16 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    //Guardar token FCM al iniciar la app
     _saveTokenToFirestore();
 
-    //Listener de mensajes en FOREGROUND
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final notification = message.notification;
-      if (notification != null) {
+    //Mensaje en foreground
+    FirebaseMessaging.onMessage.listen((msg) {
+      final notif = msg.notification;
+      if (notif != null) {
         _flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
+          notif.hashCode,
+          notif.title,
+          notif.body,
           const NotificationDetails(
             android: AndroidNotificationDetails(
               'high_importance_channel',
@@ -106,18 +102,19 @@ class _MyAppState extends State<MyApp> {
               importance: Importance.high,
             ),
           ),
-          payload: "chatId=${message.data['chatId']}&senderId=${message.data['senderId']}",
+          payload:
+              "chatId=${msg.data['chatId']}&senderId=${msg.data['senderId']}&petId=${msg.data['petId']}",
         );
       }
     });
 
-    //App abierta por tocar notificación
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _handleNotificationNavigation(message.data);
+    // 📌 App abierta desde una notificación
+    FirebaseMessaging.onMessageOpenedApp.listen((msg) {
+      _handleNotificationNavigation(msg.data);
     });
   }
 
-  /// Guardar token FCM en Firestore
+  /// Guardar token de FCM
   Future<void> _saveTokenToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -130,46 +127,69 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  /// ABRIR CHAT CUANDO SE TOCA LA NOTIFICACIÓN
   static Future<void> _handleNotificationNavigation(
       Map<String, dynamic> data) async {
 
     final chatId = data['chatId'];
-    final senderId = data['senderId']; 
+    final senderId = data['senderId'];
+    final petId = data['petId'];
 
-    if (chatId == null || senderId == null) return;
+    // ----------------------------------------------------------
+    // NOTIFICACIÓN DE CHAT
+    // ----------------------------------------------------------
+    if (chatId != null && senderId != null) {
+      final chatSnap = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(chatId)
+          .get();
 
-    // 1. Obtener info del chat
-    final chatSnap = await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(chatId)
-        .get();
+      if (!chatSnap.exists) return;
 
-    if (!chatSnap.exists) return;
+      final chat = chatSnap.data()!;
+      final participants = chat['participants'] as Map<String, dynamic>;
 
-    final chatData = chatSnap.data()!;
-    final participants = chatData['participants'] as Map<String, dynamic>;
+      final otherUser = participants[senderId];
+      if (otherUser == null) return;
 
-    final otherUser = participants[senderId];
-
-    if (otherUser == null) return;
-
-    final otherUserName = otherUser['name'] ?? "Usuario";
-    final otherUserPhoto = otherUser['photoUrl'] ?? "";
-
-    // 2. Ir al chat correcto desde cualquier parte de la app
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (_) => ChatPage(
-          chatId: chatId,
-          otherUserId: senderId,
-          otherUserName: otherUserName,
-          otherUserPhoto: otherUserPhoto,
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => ChatPage(
+            chatId: chatId,
+            otherUserId: senderId,
+            otherUserName: otherUser['name'] ?? "Usuario",
+            otherUserPhoto: otherUser['photoUrl'] ?? "",
+          ),
         ),
-      ),
-    );
-  }
+      );
+      return;
+    }
 
+    // ----------------------------------------------------------
+    // 2NOTIFICACIÓN DE MASCOTA (cambio de estado)
+    // ----------------------------------------------------------
+    if (petId != null) {
+      final petSnap = await FirebaseFirestore.instance
+          .collection('pets')
+          .doc(petId)
+          .get();
+
+      if (!petSnap.exists) return;
+
+      final petData = petSnap.data()!;
+
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => PetDetailPage(
+            docId: petId,
+            petData: petData,
+          ),
+        ),
+      );
+      return;
+    }
+
+    debugPrint("Notificación no identificada: $data");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,12 +198,11 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
-      title: 'PetHub',
+      title: "PetHub",
 
       theme: ThemeData(
-        useMaterial3: true,
         primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        scaffoldBackgroundColor: Colors.white,
         textTheme: GoogleFonts.latoTextTheme(textTheme).apply(
           bodyColor: AppColors.textDark,
           displayColor: AppColors.textDark,
@@ -191,19 +210,14 @@ class _MyAppState extends State<MyApp> {
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textLight,
-          elevation: 0,
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(foregroundColor: AppColors.primary),
         ),
       ),
 
       home: const _DeciderPage(),
 
       onGenerateRoute: (settings) {
-        if (settings.name == '/chat') {
+        if (settings.name == "/chat") {
           final args = settings.arguments as Map<String, dynamic>;
-
           return MaterialPageRoute(
             builder: (_) => ChatPage(
               chatId: args['chatId'],
@@ -228,14 +242,11 @@ class _DeciderPage extends StatelessWidget {
 
     return FutureBuilder<bool>(
       future: _checkRememberMe(user),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox.shrink();
-        }
+      builder: (context, s) {
+        if (!s.hasData) return const SizedBox.shrink();
         if (user == null) return const LoginPage();
         if (!user.emailVerified) return const VerifyEmailPage();
-        if (snapshot.data == true) return const MainShell();
-
+        if (s.data == true) return const MainShell();
         return const LoginPage();
       },
     );
@@ -245,7 +256,7 @@ class _DeciderPage extends StatelessWidget {
     if (user == null) return false;
 
     final prefs = await SharedPreferences.getInstance();
-    final rememberMe = prefs.getBool('remember_me') ?? true;
+    final rememberMe = prefs.getBool("remember_me") ?? true;
 
     if (!rememberMe) {
       await FirebaseAuth.instance.signOut();

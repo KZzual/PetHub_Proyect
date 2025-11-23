@@ -6,8 +6,9 @@ import 'screens/create_post_page.dart';
 import 'screens/post_history_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/messages_page.dart';
-import 'screens/notifications_page.dart'; 
+import 'screens/notifications_page.dart';
 import 'utils/app_colors.dart';
+import 'services/notification_service.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -20,23 +21,23 @@ class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
   static const List<String> _pageTitles = [
-    'PetHub', // Cambiado de "PetHub - Inicio" para que quede mejor con la fuente
+    'PetHub',
     'Historial de Posts',
-    'Publicar', 
+    'Publicar',
     'Notificaciones',
     'Mensajes'
   ];
 
   static final List<Widget> _stackPages = <Widget>[
-    const HomePage(), 
+    const HomePage(),
     const PostHistoryPage(),
     const SizedBox.shrink(),
-    const NotificationsPage(), 
-    const MessagesPage(), 
+    const NotificationsPage(),
+    const MessagesPage(),
   ];
 
   void _onItemTapped(int index) {
-    if (index == 2) { 
+    if (index == 2) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const CreatePostPage()),
@@ -53,15 +54,13 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       appBar: AppBar(
         leading: const Icon(Icons.pets, color: AppColors.textLight),
-        // 2. ¡AQUÍ ESTÁ LA CORRECCIÓN!
         title: Text(
           _pageTitles[_selectedIndex],
-          // Usamos el método 'getFont' y pasamos 'Pacifico' como string
           style: GoogleFonts.getFont(
             'Pacifico',
             textStyle: const TextStyle(
               color: AppColors.textLight,
-              fontSize: 22, // Ajustamos el tamaño para que se vea bien
+              fontSize: 22,
             ),
           ),
         ),
@@ -78,10 +77,13 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
+
+      // 🔥 IndexedStack mantiene estado al cambiar tabs
       body: IndexedStack(
         index: _selectedIndex,
         children: _stackPages,
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: AppColors.background,
@@ -89,18 +91,69 @@ class _MainShellState extends State<MainShell> {
         unselectedItemColor: Colors.grey,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historial'),
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Historial',
+          ),
+
+          const BottomNavigationBarItem(
             icon: Icon(Icons.add_circle, size: 35.0),
             label: 'Publicar',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notificaciones'),
-          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Mensajes'),
+
+          BottomNavigationBarItem(
+            icon: StreamBuilder<int>(
+              stream: NotificationService.pendingStatusChangeNotifications,
+              builder: (context, snapshot) {
+                final count = snapshot.data ?? 0;
+
+                if (count == 0) {
+                  return const Icon(Icons.notifications);
+                }
+
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications),
+
+                    Positioned(
+                      right: -6,
+                      top: -6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            label: 'Notificaciones',
+          ),
+
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.message),
+            label: 'Mensajes',
+          ),
         ],
       ),
     );
   }
 }
-

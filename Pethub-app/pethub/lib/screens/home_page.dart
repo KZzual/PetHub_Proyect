@@ -17,8 +17,8 @@ class _HomePageState extends State<HomePage> {
   // Variables del Buscador
   String _searchText = "";
   
-  // --- 2. NUEVAS VARIABLES PARA LOS FILTROS ---
-  String _filterSpecies = "Todos"; // Por defecto mostramos todo
+  // VARIABLES PARA LOS FILTROS
+  String _filterSpecies = "Todos";
   String _filterGender = "Todos";
 
   late Stream<QuerySnapshot> _petsStream;
@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
         .snapshots();
   }
 
-  // --- 3. FUNCIÓN PARA ABRIR EL MENU DE FILTROS ---
+  // FUNCIÓN PARA ABRIR EL MENU DE FILTROS
   void _showFilters() {
     showModalBottomSheet(
       context: context,
@@ -71,21 +71,21 @@ class _HomePageState extends State<HomePage> {
 
               final allPetsDocs = snapshot.data?.docs ?? [];
 
-              // --- 4. LÓGICA MAESTRA DE FILTRADO ---
+              // LÓGICA MAESTRA DE FILTRADO 
               final filteredPets = allPetsDocs.where((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 
-                // A. Filtro de Texto (Buscador)
+                // A. Filtro de Texto 
                 final name = (data['name'] ?? '').toString().toLowerCase();
                 final breed = (data['breed'] ?? '').toString().toLowerCase();
                 final searchLower = _searchText.toLowerCase();
                 bool passSearch = name.contains(searchLower) || breed.contains(searchLower);
 
-                // B. Filtro de Especie (Nuevo)
+                // B. Filtro de Especie 
                 final species = (data['species'] ?? '').toString();
                 bool passSpecies = _filterSpecies == 'Todos' || species == _filterSpecies;
 
-                // C. Filtro de Género (Nuevo)
+                // C. Filtro de Género 
                 final gender = (data['gender'] ?? '').toString();
                 bool passGender = _filterGender == 'Todos' || gender == _filterGender;
 
@@ -127,7 +127,7 @@ class _HomePageState extends State<HomePage> {
               return ListView(
                 padding: const EdgeInsets.only(bottom: 20),
                 children: [
-                  // Indicador de filtros activos (Opcional pero útil visualmente)
+                  // Indicador de filtros activos
                   if (_filterSpecies != 'Todos' || _filterGender != 'Todos')
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -150,7 +150,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ...filteredPets.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    // Tu lógica de tiempo aquí...
+                    // Cálculo de "hace cuánto"
                     String timeAgo = 'Reciente'; 
 
                     return GestureDetector(
@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(width: 10),
           
-          // --- 5. CONEXIÓN DEL BOTÓN ---
+          // CONEXIÓN DEL BOTÓN
           IconButton(
             icon: const Icon(Icons.tune), // Icono de ajustes/filtros
             style: IconButton.styleFrom(
@@ -238,7 +238,7 @@ class _HomePageState extends State<HomePage> {
                   ? Colors.white 
                   : AppColors.primary,
             ),
-            onPressed: _showFilters, // <--- LLAMAMOS A LA FUNCIÓN AQUÍ
+            onPressed: _showFilters, // LLAMAMOS A LA FUNCIÓN AQUÍ
           ),
         ],
       ),

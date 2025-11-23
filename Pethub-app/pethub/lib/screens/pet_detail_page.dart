@@ -30,6 +30,7 @@ class PetDetailPage extends StatelessWidget {
         'photoUrl': petData['photoUrl'] ?? '',
         'species': petData['species'] ?? '',
         'status': petData['status'] ?? '',
+        'lastStatus': petData['status'] ?? '',
         'viewedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {

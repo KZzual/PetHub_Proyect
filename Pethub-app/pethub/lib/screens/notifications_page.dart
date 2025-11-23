@@ -1,5 +1,6 @@
-// 1. IMPORTAMOS LOS PAQUETES
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/app_colors.dart';
 
 class NotificationsPage extends StatelessWidget {
@@ -7,46 +8,81 @@ class NotificationsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 2. SIN SCAFFOLD, SIN APPBAR
-    // MainShell (el padre) los controla.
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      children: const [
-        // Usaremos un widget personalizado para cada item
-        _NotificationItem(
-          icon: Icons.favorite,
-          iconColor: Colors.red,
-          title: 'A Juan Pérez le gustó tu publicación',
-          subtitle: 'Sobre: "Max"',
-          time: 'Hace 5 minutos',
+      padding: const EdgeInsets.only(top: 8.0),
+      children: [
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection('recent_views')
+              .orderBy('viewedAt', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const SizedBox.shrink();
+
+            final recent = snapshot.data!.docs;
+
+            return Column(
+              children: recent.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final petId = doc.id;
+
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('pets')
+                      .doc(petId)
+                      .get(),
+                  builder: (context, petSnap) {
+                    if (!petSnap.hasData || !petSnap.data!.exists) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final pet = petSnap.data!.data() as Map<String, dynamic>;
+
+                    final currentStatus =
+                        (pet['status'] ?? '').toString().trim();
+                    final lastStatus =
+                        (data['lastStatus'] ?? '').toString().trim();
+
+                    // Sin cambios entonce no mostrar nada
+                    if (currentStatus == lastStatus) return const SizedBox.shrink();
+
+                    final petName = pet['name'] ?? 'Mascota';
+
+                    // Mensaje según tipo de cambio
+                    final statusMessage = currentStatus == "Adoptado"
+                        ? '¡"$petName" ha sido adoptado!'
+                        : '"$petName" vuelve a estar en adopción';
+
+                    final (icon, iconColor) = currentStatus == "Adoptado"
+                        ? (Icons.check_circle, Colors.green)
+                        : (Icons.pets, AppColors.primary);
+
+                    return _NotificationItem(
+                      icon: icon,
+                      iconColor: iconColor,
+                      title: statusMessage,
+                      subtitle: currentStatus == "Adoptado"
+                          ? 'Marcado como adoptado.'
+                          : 'Marcado como en búsqueda de hogar.',
+                      time: 'Ahora',
+                    );
+                  },
+                );
+              }).toList(),
+            );
+          },
         ),
-        _NotificationItem(
-          icon: Icons.chat_bubble,
-          iconColor: AppColors.primary,
-          title: 'Ana Silva comentó en tu publicación',
-          subtitle: '"¿Sigue disponible?"',
-          time: 'Hace 20 minutos',
-        ),
-        _NotificationItem(
-          icon: Icons.pets,
-          iconColor: AppColors.secondary,
-          title: 'Nueva mascota cerca de ti',
-          subtitle: 'Un nuevo "Labrador" fue publicado a 2km.',
-          time: 'Hace 1 hora',
-        ),
-        _NotificationItem(
-          icon: Icons.task_alt,
-          iconColor: Colors.green,
-          title: '¡"Cholito" ha sido adoptado!',
-          subtitle: 'Tu publicación ha sido marcada como "En su nuevo hogar".',
-          time: 'Ayer',
-        ),
+
+        const SizedBox(height: 18),
       ],
     );
   }
 }
 
-// --- Widget Privado para el Item de Notificación ---
 
 class _NotificationItem extends StatelessWidget {
   final IconData icon;
@@ -66,42 +102,38 @@ class _NotificationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.background, // Fondo blanco
-        borderRadius: BorderRadius.circular(12.0),
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(15), // Sombra muy sutil
-            blurRadius: 5.0,
+            color: Colors.black.withAlpha(15),
+            blurRadius: 5,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. El Icono
           CircleAvatar(
-            backgroundColor: iconColor.withAlpha(26), // Opacidad
+            backgroundColor: iconColor.withAlpha(26),
             radius: 20,
             child: Icon(icon, color: iconColor, size: 22),
           ),
           const SizedBox(width: 16),
-          // 2. El Contenido (Título y Subtítulo)
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                    fontSize: 15,
-                  ),
-                ),
+                Text(title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: AppColors.textDark,
+                    )),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
@@ -110,12 +142,10 @@ class _NotificationItem extends StatelessWidget {
               ],
             ),
           ),
+
           const SizedBox(width: 8),
-          // 3. La Hora
-          Text(
-            time,
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
-          ),
+          Text(time,
+              style: const TextStyle(color: Colors.grey, fontSize: 12)),
         ],
       ),
     );

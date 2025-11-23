@@ -40,7 +40,7 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         title: const Text(
-          "Historial y vistas recientes",
+          "Historial",
           style: TextStyle(color: AppColors.textLight),
         ),
         iconTheme: const IconThemeData(color: AppColors.textLight),
@@ -81,7 +81,7 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
                       padding:
                           EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
                       child: Text(
-                        "🐾 Vistas recientemente",
+                        "Vistos recientemente",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -152,110 +152,6 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
             ),
 
             const SizedBox(height: 16),
-
-            // 🔹 Sección de publicaciones del usuario
-            StreamBuilder<QuerySnapshot>(
-              stream: postsStream,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                var posts = snapshot.data!.docs;
-                if (_selectedFilter != null) {
-                  posts = posts
-                      .where((doc) =>
-                          (doc['status'] ?? '').toString().toLowerCase() ==
-                          _selectedFilter!.toLowerCase())
-                      .toList();
-                }
-
-                final totalCount = posts.length;
-
-                if (posts.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 8.0, left: 4.0),
-                    child: Text(
-                      'No hay publicaciones con este filtro.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8.0, horizontal: 4.0),
-                      child: Row(
-                        children: [
-                          const Text(
-                            "📋 Mis publicaciones",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              "$totalCount",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ...posts.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final name = data['name'] ?? 'Sin nombre';
-                      final status = data['status'] ?? 'En búsqueda de hogar';
-                      final createdAt =
-                          (data['createdAt'] as Timestamp?)?.toDate();
-                      final photoUrl = data['photoUrl'] ?? '';
-                      final formattedDate = createdAt != null
-                          ? "${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}"
-                          : "Fecha desconocida";
-
-                      final (icon, color) = switch (status) {
-                        "Adoptado" => (Icons.check_circle, Colors.green),
-                        _ => (Icons.pets, AppColors.primary),
-                      };
-
-                      return HistoryPostCard(
-                        title: name,
-                        statusText: status,
-                        dateText: formattedDate,
-                        statusIcon: icon,
-                        iconColor: color,
-                        photoUrl: photoUrl,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  PetDetailPage(docId: doc.id, petData: data),
-                            ),
-                          );
-                        },
-                      );
-                    }),
-                  ],
-                );
-              },
-            ),
           ],
         ),
       ),

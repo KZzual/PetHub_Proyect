@@ -1,5 +1,5 @@
 /**
- *  NOTIFICACION DE NUEVO MENSAJE EN CHAT
+ *  notificacion de chat nuevo mensaje
  *
  *  Descripción:
  *  Esta función se activa cuando se crea un nuevo documento en la subcolección
@@ -108,6 +108,96 @@ exports.notifyNewMessage = onDocumentCreated(
       console.log("✅ Notificación enviada correctamente");
     } catch (error) {
       console.error("🔥 Error al enviar notificación:", error);
+    }
+  }
+);
+
+const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
+
+initializeApp();
+
+/**
+ * NOTIFICAR CAMBIO DE ESTADO DE MASCOTA
+ * Detecta cuando "status" cambia en un documento de /pets/{petId}
+ */
+exports.notifyPetStatusChange = onDocumentUpdated(
+  "pets/{petId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+    const petId = event.params.petId;
+
+    const oldStatus = (before.status || "").trim();
+    const newStatus = (after.status || "").trim();
+
+    console.log("🐾 Revisando cambio de estado:", { oldStatus, newStatus });
+
+    // --- Si el estado NO cambió, no notificamos ---
+    if (oldStatus === newStatus) {
+      console.log("➖ No hubo cambio de estado. No se envía notificación.");
+      return;
+    }
+
+    // Obtener dueño
+    const userId = after.userId;
+    if (!userId) {
+      console.log(" Mascota sin userId");
+      return;
+    }
+
+    const db = getFirestore();
+
+    // Datos del dueño (para obtener token FCM)
+    const userSnap = await db.collection("users").doc(userId).get();
+    if (!userSnap.exists) {
+      console.log( " Dueño no existe");
+      return;
+    }
+
+    const fcmToken = userSnap.data().fcmToken;
+    if (!fcmToken) {
+      console.log(" Dueño sin token FCM");
+      return;
+    }
+
+    // Nombre mascota
+    const petName = after.name || "Tu mascota";
+
+    // Texto dinámico
+    const title =
+      newStatus === "Adoptado"
+        ? `¡${petName} ha sido adoptado!`
+        : `${petName} está nuevamente en adopción`;
+
+    const body =
+      newStatus === "Adoptado"
+        ? "Tu publicación fue marcada como adoptada."
+        : "Tu mascota vuelve a estar disponible.";
+
+    // Payload FCM
+    const payload = {
+      token: fcmToken,
+      notification: {
+        title,
+        body,
+      },
+      data: {
+        petId: petId,
+        newStatus: newStatus,
+      },
+      android: {
+        priority: "high",
+      },
+    };
+
+    try {
+      await getMessaging().send(payload);
+      console.log(" Notificación enviada correctamente");
+    } catch (error) {
+      console.error(" Error al enviar notificación:", error);
     }
   }
 );
