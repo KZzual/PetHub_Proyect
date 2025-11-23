@@ -78,7 +78,7 @@ class _MainShellState extends State<MainShell> {
         ],
       ),
 
-      // 🔥 IndexedStack mantiene estado al cambiar tabs
+      // IndexedStack mantiene estado al cambiar tabs
       body: IndexedStack(
         index: _selectedIndex,
         children: _stackPages,
