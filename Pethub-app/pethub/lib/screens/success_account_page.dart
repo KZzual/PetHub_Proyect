@@ -45,7 +45,7 @@ class _SuccessAccountPageState extends State<SuccessAccountPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ✅ Animación del check
+                // Animación del check
                 ScaleTransition(
                   scale: _scaleAnimation,
                   child: Container(

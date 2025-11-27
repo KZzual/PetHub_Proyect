@@ -5,9 +5,7 @@ class ChatService {
   static final _firestore = FirebaseFirestore.instance;
   static final _auth = FirebaseAuth.instance;
 
-  /// ======================================================
-  /// Crear o recuperar un chat entre 2 usuarios
-  /// ======================================================
+  // Crear o recuperar un chat entre 2 usuarios
   static Future<String> createOrGetChat({
     required String otherUserId,
     required String otherUserName,
@@ -54,9 +52,7 @@ class ChatService {
     return chatRef.id;
   }
 
-  /// ======================================================
-  /// Enviar mensaje
-  /// ======================================================
+  // Enviar mensaje
   static Future<void> sendMessage({
     required String chatId,
     required String text,
@@ -84,9 +80,7 @@ class ChatService {
     });
   }
 
-  /// ======================================================
-  ///  Stream en vivo de mensajes
-  /// ======================================================
+  // Stream en vivo de mensajes
   static Stream<QuerySnapshot> streamMessages(String chatId) {
     return _firestore
         .collection('chats')
@@ -96,9 +90,7 @@ class ChatService {
         .snapshots();
   }
 
-  /// ======================================================
-  ///  Marcar mensajes como VISTOS
-  /// ======================================================
+  // Marcar mensajes como VISTOS
   static Future<void> markMessagesAsSeen(String chatId) async {
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) return;

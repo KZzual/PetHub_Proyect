@@ -45,7 +45,7 @@ class PetCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Header con datos del usuario ---
+          // Header con datos del usuario
           ListTile(
             leading: CircleAvatar(
               backgroundImage: userPhoto.isNotEmpty

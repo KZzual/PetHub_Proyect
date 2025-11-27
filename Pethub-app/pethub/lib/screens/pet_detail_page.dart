@@ -13,7 +13,7 @@ class PetDetailPage extends StatelessWidget {
     required this.petData,
   });
 
-  // 🔥 Guardar la vista reciente del usuario actual
+  // Guardar la vista reciente del usuario actual
   Future<void> _registerRecentView() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -40,7 +40,7 @@ class PetDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Registra la visita en Firestore apenas se construye la pantalla
+    // Registra la visita en Firestore apenas se construye la pantalla
     _registerRecentView();
 
     final photoUrl = (petData['photoUrl'] ?? '') as String;

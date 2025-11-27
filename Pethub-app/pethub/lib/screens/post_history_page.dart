@@ -64,7 +64,7 @@ class _PostHistoryPageState extends State<PostHistoryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Sección de vistas recientes
+            //  Sección de vistas recientes
             StreamBuilder<QuerySnapshot>(
               stream: recentStream,
               builder: (context, snapshot) {

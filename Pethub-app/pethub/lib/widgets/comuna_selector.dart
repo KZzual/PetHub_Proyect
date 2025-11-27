@@ -37,7 +37,7 @@ class _ComunaSelectorContentState extends State<_ComunaSelectorContent> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // --- Header con buscador y botón cerrar ---
+        // Header con buscador y botón cerrar
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
@@ -69,7 +69,7 @@ class _ComunaSelectorContentState extends State<_ComunaSelectorContent> {
 
         const Divider(height: 1),
 
-        // --- Lista de Provincias y Comunas ---
+        // Lista de Provincias y Comunas
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.only(bottom: 24),
@@ -128,8 +128,7 @@ class _ComunaSelectorContentState extends State<_ComunaSelectorContent> {
     );
   }
 
-  /// Normaliza texto quitando tildes / acentos
-  /// pero MANTENIENDO la Ñ ( ≠ n)
+  // Normaliza texto quitando tildes / acentos
   String _normalize(String input) {
     return input
         .toLowerCase()
@@ -138,6 +137,5 @@ class _ComunaSelectorContentState extends State<_ComunaSelectorContent> {
         .replaceAll(RegExp(r'[íìïî]'), 'i')
         .replaceAll(RegExp(r'[óòöô]'), 'o')
         .replaceAll(RegExp(r'[úùüû]'), 'u');
-    // ojo: NO reemplaza ñ ❗
   }
 }

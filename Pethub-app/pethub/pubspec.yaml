@@ -28,12 +28,12 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  exif: ^3.1.4
   flutter:
     sdk: flutter
   http: ^1.5.0
   image: ^4.0.17
   crypto: ^3.0.3
-  exif: ^3.3.0
   google_fonts: ^6.3.2
   firebase_messaging: ^16.0.4
   flutter_local_notifications: ^17.2.1

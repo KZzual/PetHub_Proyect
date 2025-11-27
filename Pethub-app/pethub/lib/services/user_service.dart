@@ -6,9 +6,7 @@ class UserService {
   static final _firestore = FirebaseFirestore.instance;
   static final _auth = FirebaseAuth.instance;
 
-  /// ======================================================
-  /// Crear documento del usuario al registrarse
-  /// ======================================================
+  // Crear documento del usuario al registrarse
   static Future<void> createUserProfile({
     required String name,
     required String email,
@@ -33,9 +31,8 @@ class UserService {
     }, SetOptions(merge: true));
   }
 
-  /// ======================================================
-  /// Escuchar perfil del usuario en tiempo real
-  /// ======================================================
+
+  // Escuchar perfil del usuario en tiempo real
   static Stream<Map<String, dynamic>?> streamUserProfile() {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return const Stream.empty();
@@ -47,9 +44,8 @@ class UserService {
         .map((doc) => doc.data());
   }
 
-  /// ======================================================
-  /// Obtener perfil actual del usuario
-  /// ======================================================
+
+  // Obtener perfil actual del usuario
   static Future<Map<String, dynamic>?> getCurrentUserProfile() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return null;
@@ -58,10 +54,8 @@ class UserService {
     return doc.data();
   }
 
-  /// ======================================================
-  /// Actualizar perfil del usuario
-  //  el token se actualiza si es necesario
-  /// ======================================================
+  // Actualizar perfil del usuario
+  // el token se actualiza si es necesario
   static Future<void> updateUserProfile({
     String? name,
     String? phone,
@@ -92,9 +86,7 @@ class UserService {
     }
   }
 
-  /// ======================================================
-  /// Actualizar token manualmente si kieres
-  /// ======================================================
+  // Actualizar token manualmente si kieres
   static Future<void> refreshFcmToken() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;

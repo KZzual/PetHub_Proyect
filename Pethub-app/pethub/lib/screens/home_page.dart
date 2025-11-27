@@ -123,6 +123,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               }
+            // --- Si hay datos ---
+            
 
               return ListView(
                 padding: const EdgeInsets.only(bottom: 20),
@@ -150,9 +152,25 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ...filteredPets.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    // Cálculo de "hace cuánto"
-                    String timeAgo = 'Reciente'; 
+                    final timestamp = data['createdAt'];
+                  String timeAgo = '';
+                  if (timestamp != null) {
+                    final postDate = (timestamp as Timestamp).toDate();
+                    final diff = DateTime.now().difference(postDate);
 
+                    if (diff.inSeconds < 60) {
+                      timeAgo = 'Hace unos segundos';
+                    } else if (diff.inMinutes < 60) {
+                      timeAgo = 'Hace ${diff.inMinutes} min';
+                    } else if (diff.inHours < 24) {
+                      timeAgo = 'Hace ${diff.inHours} h';
+                    } else if (diff.inDays < 7) {
+                      timeAgo = 'Hace ${diff.inDays} días';
+                    } else {
+                      final weeks = (diff.inDays / 7).floor();
+                      timeAgo = 'Hace $weeks semana${weeks > 1 ? 's' : ''}';
+                    }
+                  }
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(

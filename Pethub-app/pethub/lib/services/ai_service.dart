@@ -41,13 +41,13 @@ class AiService {
    
    // Analiza imagen local y guarda/carga resultados en caché
   static Future<AIAnalysisResult> analyzePetImage(File imageFile) async {
-    // === 1 Generar un hash único de la imagen ===
+    //Generar un hash único de la imagen ===
     final bytes = await imageFile.readAsBytes();
     final hash = sha1.convert(bytes).toString();
     final cacheRef =
         FirebaseFirestore.instance.collection('ai_cache').doc(hash);
 
-    // === 2️ Revisar si ya existe análisis previo ===
+    // 2Revisar si ya existe análisis previo ===
     final cached = await cacheRef.get();
     if (cached.exists) {
       print(' [IA CACHE HIT] Resultado recuperado de Firestore');
@@ -56,17 +56,17 @@ class AiService {
 
     print('[IA CACHE MISS] Analizando imagen con Google Vision...');
 
-    // === 3️ Validar EXIF ===
+    // Validar EXIF
     final exifValid = await _checkExifData(imageFile);
 
-    // === 4️ Enviar a Google Cloud Vision ===
+    // Enviar a Google Cloud Vision
     final visionData = await _analyzeWithGoogleVision(bytes);
     final labels = (visionData['responses']?[0]['labelAnnotations'] as List?)
             ?.map((l) => l['description'].toString())
             .toList() ??
         [];
 
-    // === 5️ Detectar tipo de mascota ===
+    // Detectar tipo de mascota 
     final lower = labels.map((e) => e.toLowerCase()).toList();
     final isPet = lower.any((l) =>
         l.contains('dog') ||
@@ -74,10 +74,10 @@ class AiService {
         l.contains('puppy') ||
         l.contains('kitten'));
 
-    // === 6️ Generar descripción automática dinámica ===
+    // Generar descripción automática dinámica
     final desc = generateDynamicDescription(labels);
 
-    // === 7️ Crear resultado y guardar en caché ===
+    //Crear resultado y guardar en caché 
     final result = AIAnalysisResult(
       isPet: isPet,
       exifValid: exifValid,

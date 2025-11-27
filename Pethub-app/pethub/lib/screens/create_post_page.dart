@@ -53,17 +53,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   color: AppColors.textDark),
             ),
             const SizedBox(height: 8),
-
+            
             // Imagen + IA
             GestureDetector(
-              onTap: _pickImageAndAnalyze,
+              onTap: _showImageSourceSelector,
               child: Container(
                 height: 180,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(12),
                   image: _selectedImage != null
                       ? DecorationImage(
                           image: FileImage(_selectedImage!),
@@ -85,8 +84,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     : _analyzing
                         ? const Center(
                             child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                            ),
+                                color: AppColors.primary),
                           )
                         : null,
               ),
@@ -184,13 +182,40 @@ class _CreatePostPageState extends State<CreatePostPage> {
     );
   }
 
-  // === Analizar imagen con IA ===
-  Future<void> _pickImageAndAnalyze() async {
-    final picked = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
+  // Analizar imagen con IA
+  void _showImageSourceSelector() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Tomar foto'),
+            onTap: () {
+              Navigator.pop(context);
+              _pickImageAndAnalyze(ImageSource.camera);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Elegir de galería'),
+            onTap: () {
+              Navigator.pop(context);
+              _pickImageAndAnalyze(ImageSource.gallery);
+            },
+          ),
+        ],
+      ),
     );
+  }
 
+  // SELECCIÓN + IA
+  Future<void> _pickImageAndAnalyze(ImageSource source) async {
+    final picked =
+        await _picker.pickImage(source: source, imageQuality: 80);
     if (picked == null) return;
 
     setState(() {
@@ -198,8 +223,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
       _analyzing = true;
       _detectedType = null;
     });
-
-    try {
+    
+     try {
       final analysis = await AiService.analyzePetImage(_selectedImage!);
       final lowerLabels = analysis.labels.map((e) => e.toLowerCase()).toList();
 
@@ -222,7 +247,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             ),
             backgroundColor: Colors.redAccent,
             content: const Text(
-              'Solo se permiten fotos de mascotas 🐾',
+              'La imagen no parece ser un perro o gato.\nIntenta otra foto',
               style: TextStyle(color: Colors.white),
             ),
             duration: Duration(seconds: 3), // opcional: controla cuánto dura visible
@@ -250,7 +275,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
         }
       });
 
-
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
@@ -265,18 +289,24 @@ class _CreatePostPageState extends State<CreatePostPage> {
         ),
       ));
     } catch (e) {
+      _selectedImage = null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al analizar imagen: $e')),
       );
-    } finally {
-      setState(() => _analyzing = false);
     }
-  }
+    setState(() => _analyzing = false);
+    }
 
   // === Publicar ===
   Future<void> _publishPost() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+    if (!_genderSelection.contains(true)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona el género')),
+      );
+      return;
+    }
 
     if (_nameCtrl.text.isEmpty ||
         _selectedSpecies == null ||
@@ -291,7 +321,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
         shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.0), 
         ),
-        content: Text('Por favor completa todos los campos y sube una foto válida.'),
+        content: Text('Por favor revisa todos los campos y la imagen'),
       ));
       return;
     }

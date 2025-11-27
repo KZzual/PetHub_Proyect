@@ -5,7 +5,7 @@ class Provincia {
   Provincia({required this.nombre, required this.comunas});
 }
 
-/// Región Metropolitana — Provincias y Comunas (ordenadas alfabéticamente)
+// Región Metropolitana — Provincias y Comunas (ordenadas alfabéticamente)
 final List<Provincia> provinciasRM = [
 
   Provincia(

@@ -111,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ---------- Botones Iniciar / Registrar ----------
+  // Botones Iniciar / Registrar
   Widget _buildToggleButtons() {
     return Container(
       decoration: BoxDecoration(

@@ -20,7 +20,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// Necesario para mensajes en background
+// Necesario para mensajes en background
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("Mensaje en BACKGROUND: ${message.data}");
@@ -87,7 +87,7 @@ class _MyAppState extends State<MyApp> {
 
     _saveTokenToFirestore();
 
-    //Mensaje en foreground
+    // Mensaje en foreground
     FirebaseMessaging.onMessage.listen((msg) {
       final notif = msg.notification;
       if (notif != null) {
@@ -108,7 +108,7 @@ class _MyAppState extends State<MyApp> {
       }
     });
 
-    // 📌 App abierta desde una notificación
+    // App abierta desde una notificación
     FirebaseMessaging.onMessageOpenedApp.listen((msg) {
       _handleNotificationNavigation(msg.data);
     });
@@ -134,9 +134,7 @@ class _MyAppState extends State<MyApp> {
     final senderId = data['senderId'];
     final petId = data['petId'];
 
-    // ----------------------------------------------------------
     // NOTIFICACIÓN DE CHAT
-    // ----------------------------------------------------------
     if (chatId != null && senderId != null) {
       final chatSnap = await FirebaseFirestore.instance
           .collection('chats')
@@ -164,9 +162,7 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
-    // ----------------------------------------------------------
-    // 2NOTIFICACIÓN DE MASCOTA (cambio de estado)
-    // ----------------------------------------------------------
+    // NOTIFICACIÓN DE MASCOTA (cambio de estado)
     if (petId != null) {
       final petSnap = await FirebaseFirestore.instance
           .collection('pets')
