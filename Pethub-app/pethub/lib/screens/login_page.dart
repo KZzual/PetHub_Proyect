@@ -359,7 +359,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: const TextStyle(color: AppColors.textDark),
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textDark),
-                  prefixText: '+56 ',
+                  prefixText: '+56',
                   hintText: 'Número de teléfono',
                   hintStyle: TextStyle(color: Color(0xFF777777)),
                   filled: true,
@@ -505,7 +505,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    if (phone.length != 8 || int.tryParse(phone) == null) {
+    if (phone.length != 9 || int.tryParse(phone) == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
