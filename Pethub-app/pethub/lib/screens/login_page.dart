@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pethub/main_shell.dart';
@@ -10,7 +11,7 @@ import '../services/user_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
+  
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -34,6 +35,54 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isPasswordObscure = true;
   bool _isConfirmPasswordObscure = true;
+
+  @override
+    void initState() {
+      super.initState();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkTermsAndConditions();
+      });
+    }
+
+  Future<void> _checkTermsAndConditions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accepted = prefs.getBool('termsAccepted') ?? false;
+
+    if (accepted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Términos y Condiciones"),
+          content: const SingleChildScrollView(
+            child: Text(
+              "Al usar PetHub aceptas los términos y condiciones...\n\n"
+              "• Uso responsable de la plataforma\n"
+              "• Información entregada por usuarios\n"
+              "• Protección de datos\n\n"
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Cancelar"),
+              onPressed: () {
+                exit(0); //cerrar app
+              },
+            ),
+            ElevatedButton(
+              child: const Text("Aceptar"),
+              onPressed: () async {
+                await prefs.setBool('termsAccepted', true);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   void dispose() {

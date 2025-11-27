@@ -123,8 +123,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               }
-            // --- Si hay datos ---
-            
 
               return ListView(
                 padding: const EdgeInsets.only(bottom: 20),
