@@ -45,3 +45,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/pethub-release.jks
+/android/key.properties
+/android/local.properties
+/android/pethub-keystore.jks
