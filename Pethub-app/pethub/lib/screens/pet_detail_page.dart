@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/app_colors.dart';
+import 'dart:ui';
 
 class PetDetailPage extends StatelessWidget {
   final String docId;
@@ -69,12 +70,34 @@ class PetDetailPage extends StatelessWidget {
       body: ListView(
         children: [
           if (photoUrl.isNotEmpty)
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                photoUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _imageFallback(),
+            ClipRRect(
+              child: SizedBox(
+                height: 350,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      photoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(color: AppColors.accent),
+                    ),
+                    // Efecto blur
+                    BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        color: Colors.black.withOpacity(0.1),
+                      ),
+                    ),
+                    Center(
+                      child: Image.network(
+                        photoUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => _imageFallback(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             )
           else
