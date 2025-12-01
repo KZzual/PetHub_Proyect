@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';     // <<--- IMPORTANTE
 import '../utils/app_colors.dart';
 import 'privacy_policy_page.dart';
 import 'terms_conditios.dart';
-// Importamos Login para "Cerrar Sesión"
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -12,19 +13,19 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // Variables para controlar el estado de los switches
   bool _notificationsEnabled = true;
-  bool _darkModeEnabled = false;
 
   @override
   Widget build(BuildContext context) {
+
+    // Acceso al ThemeProvider
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
-      backgroundColor: AppColors.accent, // Fondo grisáceo
+      backgroundColor: AppColors.accent,
       appBar: AppBar(
-        // Usamos el color de fondo del tema
         backgroundColor: AppColors.background,
         elevation: 1,
-        // Flecha de 'atrás' con el color oscuro
         leading: const BackButton(color: AppColors.textDark),
         title: const Text(
           'Configuración',
@@ -33,76 +34,73 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: ListView(
         children: [
-          // --- Sección de Cuenta ---
+
+          // --------------------
+          //     CUENTA
+          // --------------------
           const _SectionHeader(title: 'Cuenta'),
+
           SwitchListTile(
             title: const Text('Notificaciones', style: TextStyle(color: AppColors.textDark)),
             subtitle: const Text('Recibir alertas de la app'),
             value: _notificationsEnabled,
-            onChanged: (bool value) {
+            onChanged: (value) {
               setState(() {
                 _notificationsEnabled = value;
               });
             },
-            // La línea 'activeColor' fue eliminada. Tomará el color del Theme.
           ),
-          
-          // --- Sección de Apariencia ---
+
+          // --------------------
+          //     APARIENCIA
+          // --------------------
           const _SectionHeader(title: 'Apariencia'),
+
           SwitchListTile(
             title: const Text('Modo Oscuro', style: TextStyle(color: AppColors.textDark)),
             subtitle: const Text('Activar el tema oscuro'),
-            value: _darkModeEnabled,
+            value: themeProvider.themeMode == ThemeMode.dark,
             onChanged: (bool value) {
-              setState(() {
-                _darkModeEnabled = value;
-              });
+              themeProvider.toggleTheme(value);
             },
-            // La línea 'activeColor' fue eliminada. Tomará el color del Theme.
           ),
+
           ListTile(
             title: const Text('Idioma', style: TextStyle(color: AppColors.textDark)),
             subtitle: const Text('Español (Latinoamérica)'),
             leading: const Icon(Icons.language_outlined, color: AppColors.textDark),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () { /* Lógica para cambiar idioma */ },
+            onTap: () {},
           ),
-          
-          // --- Sección de Soporte y Cierre de Sesión ---
+
+          // --------------------
+          //     SOPORTE
+          // --------------------
           const _SectionHeader(title: 'Soporte'),
+
           ListTile(
             title: const Text('Ayuda y Soporte', style: TextStyle(color: AppColors.textDark)),
             leading: const Icon(Icons.help_outline, color: AppColors.textDark),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () { /* Lógica de Ayuda */ },
+            onTap: () {},
           ),
+
           ListTile(
             title: const Text('Términos y Condiciones', style: TextStyle(color: AppColors.textDark)),
             leading: const Icon(Icons.description_outlined, color: AppColors.textDark),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PrivacyPolicyPage(),
-                ),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()));
             },
           ),
+
           ListTile(
-            title: const Text(
-              'Política de Privacidad',
-              style: TextStyle(color: AppColors.textDark),
-            ),
+            title: const Text('Política de Privacidad',
+                style: TextStyle(color: AppColors.textDark)),
             leading: const Icon(Icons.description_outlined, color: AppColors.textDark),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PrivacyPolicyPage(),
-                ),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()));
             },
           ),
         ],
@@ -111,7 +109,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-// Widget privado para los cabezales de sección (ej. "Cuenta")
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});

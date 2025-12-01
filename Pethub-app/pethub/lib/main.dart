@@ -183,33 +183,39 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    return ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            navigatorKey: navigatorKey,
+            title: "PetHub",
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey,
-      title: "PetHub",
+            // 👉 Ahora usando ThemeProvider
+            theme: themeProvider.lightTheme,
+            darkTheme: themeProvider.darkTheme,
+            themeMode: themeProvider.themeMode,
 
-      theme: themeProvider.lightTheme,
-      darkTheme: themeProvider.darkTheme,
-      themeMode: themeProvider.themeMode,
+            home: const _DeciderPage(),
 
-      home: const _DeciderPage(),
-
-      onGenerateRoute: (settings) {
-        if (settings.name == "/chat") {
-          final args = settings.arguments as Map<String, dynamic>;
-          return MaterialPageRoute(
-            builder: (_) => ChatPage(
-              chatId: args['chatId'],
-              otherUserId: args['otherUserId'],
-              otherUserName: args['otherUserName'],
-              otherUserPhoto: args['otherUserPhoto'],
-            ),
+            onGenerateRoute: (settings) {
+              if (settings.name == "/chat") {
+                final args = settings.arguments as Map<String, dynamic>;
+                return MaterialPageRoute(
+                  builder: (_) => ChatPage(
+                    chatId: args['chatId'],
+                    otherUserId: args['otherUserId'],
+                    otherUserName: args['otherUserName'],
+                    otherUserPhoto: args['otherUserPhoto'],
+                  ),
+                );
+              }
+              return null;
+            },
           );
-        }
-        return null;
-      },
+        },
+      ),
     );
   }
 }
