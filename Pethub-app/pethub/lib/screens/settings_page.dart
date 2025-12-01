@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import 'privacy_policy_page.dart';
+import 'terms_conditios.dart';
 // Importamos Login para "Cerrar Sesión"
 
 class SettingsPage extends StatefulWidget {
@@ -78,7 +80,30 @@ class _SettingsPageState extends State<SettingsPage> {
             title: const Text('Términos y Condiciones', style: TextStyle(color: AppColors.textDark)),
             leading: const Icon(Icons.description_outlined, color: AppColors.textDark),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () { /* Lógica de Términos */ },
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PrivacyPolicyPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            title: const Text(
+              'Política de Privacidad',
+              style: TextStyle(color: AppColors.textDark),
+            ),
+            leading: const Icon(Icons.description_outlined, color: AppColors.textDark),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PrivacyPolicyPage(),
+                ),
+              );
+            },
           ),
         ],
       ),

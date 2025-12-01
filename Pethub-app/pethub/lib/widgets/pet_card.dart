@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'info_chip.dart';
 import '../utils/app_colors.dart';
+import 'dart:ui';
 
 class PetCard extends StatelessWidget {
   final String name;
@@ -74,11 +75,34 @@ class PetCard extends StatelessWidget {
 
           // --- Imagen principal ---
           photoUrl.isNotEmpty
-              ? Image.network(
-                  photoUrl,
-                  height: 250,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+              ? ClipRRect(
+                  child: SizedBox(
+                    height: 250,
+                    width: double.infinity,
+                    child: Stack(
+                      fit: StackFit.expand,// Stack respete el tamaño
+                      children: [
+                        // Fondo con blur
+                        Image.network(
+                          photoUrl,
+                          fit: BoxFit.cover,
+                        ),
+                        // Efecto blur
+                        BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                          child: Container(
+                            color: Colors.black.withOpacity(0.1),
+                          ),
+                        ),
+                        Center(
+                          child: Image.network(
+                            photoUrl,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 )
               : Container(
                   height: 250,

@@ -58,7 +58,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             GestureDetector(
               onTap: _showImageSourceSelector,
               child: Container(
-                height: 180,
+                height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.accent,
@@ -66,7 +66,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                   image: _selectedImage != null
                       ? DecorationImage(
                           image: FileImage(_selectedImage!),
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                         )
                       : null,
                 ),
