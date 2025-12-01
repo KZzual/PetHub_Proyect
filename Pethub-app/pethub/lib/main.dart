@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';                 // CORRECTO
+import 'providers/theme_provider.dart';                 // TU ARCHIVO
+
 import 'screens/login_page.dart';
 import 'utils/app_colors.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,9 +13,6 @@ import 'screens/verify_email_page.dart';
 import 'screens/chat_page.dart';
 import 'screens/pet_detail_page.dart';
 
-// Google Fonts
-import 'package:google_fonts/google_fonts.dart';
-
 // Firebase Messaging + Local Notifications
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -20,7 +20,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-// Necesario para mensajes en background
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("Mensaje en BACKGROUND: ${message.data}");
@@ -29,7 +28,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -37,10 +35,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Handler global
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // Inicializar notificaciones locales
   const initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
   const initSettings = InitializationSettings(android: initAndroid);
 
@@ -54,7 +50,6 @@ void main() async {
     },
   );
 
-  // Canal
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel',
     'Notificaciones Importantes',
@@ -66,10 +61,14 @@ void main() async {
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
-  // Permiso en Android 13+
   await FirebaseMessaging.instance.requestPermission();
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -87,7 +86,6 @@ class _MyAppState extends State<MyApp> {
 
     _saveTokenToFirestore();
 
-    // Mensaje en foreground
     FirebaseMessaging.onMessage.listen((msg) {
       final notif = msg.notification;
       if (notif != null) {
@@ -108,13 +106,11 @@ class _MyAppState extends State<MyApp> {
       }
     });
 
-    // App abierta desde una notificación
     FirebaseMessaging.onMessageOpenedApp.listen((msg) {
       _handleNotificationNavigation(msg.data);
     });
   }
 
-  /// Guardar token de FCM
   Future<void> _saveTokenToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -134,7 +130,6 @@ class _MyAppState extends State<MyApp> {
     final senderId = data['senderId'];
     final petId = data['petId'];
 
-    // NOTIFICACIÓN DE CHAT
     if (chatId != null && senderId != null) {
       final chatSnap = await FirebaseFirestore.instance
           .collection('chats')
@@ -162,7 +157,6 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
-    // NOTIFICACIÓN DE MASCOTA (cambio de estado)
     if (petId != null) {
       final petSnap = await FirebaseFirestore.instance
           .collection('pets')
@@ -189,25 +183,16 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       title: "PetHub",
 
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: Colors.white,
-        textTheme: GoogleFonts.latoTextTheme(textTheme).apply(
-          bodyColor: AppColors.textDark,
-          displayColor: AppColors.textDark,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textLight,
-        ),
-      ),
+      theme: themeProvider.lightTheme,
+      darkTheme: themeProvider.darkTheme,
+      themeMode: themeProvider.themeMode,
 
       home: const _DeciderPage(),
 
