@@ -1,0 +1,168 @@
+Project PetHub {
+  database_type: "PostgreSQL"
+  Note: "Modelo relacional de las colecciones Firestore para usar en dbdiagram.io"
+}
+
+Enum species {
+  "Perro"
+  "Gato"
+}
+
+Enum gender {
+  "Macho"
+  "Hembra"
+}
+
+Enum adoption_status {
+  "En Adopción"
+  "Adoptado"
+}
+
+Enum comuna_rm {
+  "San Joaquín"
+  "La Florida"
+  "Macul"
+  "Ñuñoa"
+  "Santiago Centro"
+  "Providencia"
+  "La Cisterna"
+  "Maipú"
+  "Puente Alto"
+  "San Miguel"
+}
+
+Table users {
+  id varchar [pk, note: "Firebase UID"]
+  name varchar
+  email varchar [unique]
+  phone varchar
+  comuna comuna_rm [note: "Opcional"]
+  description text
+  photo_url text
+  role varchar [note: "'adoptante'"]
+  fcm_token text
+  created_at datetime
+
+  Note: "Firestore: /users/{userId}"
+
+  Indexes {
+    (email) [name: 'idx_users_email_unique', unique]
+  }
+}
+
+Table pets {
+  id varchar [pk]
+  user_id varchar [ref: > users.id]
+  user_name varchar
+  user_photo text
+  name varchar
+  species species
+  breed varchar
+  gender gender
+  age varchar
+  location varchar
+  description text
+  auto_description text
+  photo_url text
+  status adoption_status
+  created_at datetime
+
+  Note: "Firestore: /pets/{petId}"
+
+  Indexes {
+    (user_id, created_at) [name: 'idx_pets_user_created']
+    (created_at) [name: 'idx_pets_created_at']
+  }
+}
+
+Table ai_cache {
+  hash varchar [pk, note: "SHA-1 de bytes de imagen"]
+  is_pet boolean
+  exif_valid boolean
+  auto_description text
+  created_at datetime
+
+  Note: "Firestore: /ai_cache/{hash}"
+}
+
+Table ai_cache_labels {
+  hash varchar [ref: > ai_cache.hash]
+  label varchar
+
+  Note: "Etiquetas de Vision API por imagen (1..N)"
+
+  Indexes {
+    (hash, label) [name: 'pk_ai_cache_labels', unique]
+    (label) [name: 'idx_ai_label']
+  }
+}
+
+Table chats {
+  id varchar [pk]
+  last_message text
+  last_timestamp datetime
+  unread_count int [note: "Contador global según implementación actual"]
+
+  Note: "Firestore: /chats/{chatId}"
+
+  Indexes {
+    (last_timestamp) [name: 'idx_chats_last_ts_desc']
+  }
+}
+
+Table chat_participants {
+  chat_id varchar [ref: > chats.id]
+  user_id varchar [ref: > users.id]
+  name varchar [note: "Nombre mostrado en el chat"]
+  photo_url text
+
+  Note: "Mapa 'participants' + arreglo 'users' del doc de chat"
+
+  Indexes {
+    (chat_id, user_id) [name: 'pk_chat_participants', unique]
+    (user_id, chat_id) [name: 'idx_participant_user_chat']
+  }
+}
+
+Table chat_messages {
+  id varchar [pk]
+  chat_id varchar [ref: > chats.id]
+  sender_id varchar [ref: > users.id]
+  text text
+  timestamp datetime
+  seen boolean
+
+  Note: "Firestore: /chats/{chatId}/messages/{messageId}"
+
+  Indexes {
+    (chat_id, timestamp) [name: 'idx_msgs_chat_time']
+  }
+}
+
+Table users_recent_views {
+  user_id varchar [ref: > users.id]
+  pet_id varchar [ref: > pets.id]
+  name varchar
+  photo_url text
+  species species
+  status adoption_status
+  last_status adoption_status
+  viewed_at datetime
+
+  Note: "Firestore: /users/{userId}/recent_views/{petId}"
+
+  Indexes {
+    (user_id, pet_id) [name: 'pk_recent_views', unique]
+    (user_id, viewed_at) [name: 'idx_recent_user_time']
+  }
+}
+
+// Relaciones explícitas (opcionales si ya se usan ref en columnas)
+Ref: pets.user_id > users.id
+Ref: chat_participants.chat_id > chats.id
+Ref: chat_participants.user_id > users.id
+Ref: chat_messages.chat_id > chats.id
+Ref: chat_messages.sender_id > users.id
+Ref: users_recent_views.user_id > users.id
+Ref: users_recent_views.pet_id > pets.id
+Ref: ai_cache_labels.hash > ai_cache.hash
